@@ -18,7 +18,7 @@ async function bootApp() {
 
     // 2. Ask the user for a Notebook ID (This acts as our Swarm Topic)
     const notebookName = await rl.question('Enter a Notebook ID to join/create: ');
-    
+
     // Hash the notebook name to create a secure 32-byte topic for the DHT
     const topic = crypto.createHash('sha256').update(notebookName).digest();
 
@@ -38,19 +38,27 @@ async function bootApp() {
         console.log('\n[🤝] A new peer joined the notebook swarm!');
 
         // Listen for new notes from this peer
+        let peerBuffer = '';
         conn.on('data', async (data) => {
-            try {
-                const message = JSON.parse(data.toString());
-                console.log(`\n[P2P Note from Peer]: ${message.text}`);
-                
-                // Persist the peer's note to our local Hypercore ledger
-                await core.append({ 
-                    source: 'peer', 
-                    text: message.text, 
-                    timestamp: Date.now() 
-                });
-            } catch (e) {
-                // Ignore malformed data
+            peerBuffer += data.toString();
+            const lines = peerBuffer.split('\n');
+            peerBuffer = lines.pop(); // Keep the last incomplete line
+
+            for (const line of lines) {
+                if (!line.trim()) continue;
+                try {
+                    const message = JSON.parse(line);
+                    console.log(`\n[P2P Note from Peer]: ${message.text}`);
+
+                    // Persist the peer's note to our local Hypercore ledger
+                    await core.append({
+                        source: 'peer',
+                        text: message.text,
+                        timestamp: Date.now()
+                    });
+                } catch (e) {
+                    // Ignore malformed data
+                }
             }
         });
 
@@ -83,7 +91,7 @@ async function bootApp() {
         await core.append(noteData);
 
         // Broadcast directly to all connected peers
-        const buffer = b4a.from(JSON.stringify(noteData));
+        const buffer = b4a.from(JSON.stringify(noteData) + '\n');
         for (const peer of peers) {
             peer.write(buffer);
         }
