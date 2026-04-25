@@ -1,0 +1,21 @@
+{
+  "name": "hackupc26",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "b4a": "^1.8.0",
+    "hypercore": "^11.28.1",
+    "hyperswarm": "^4.17.0"
+  },
+  "devDependencies": {
+    "electron": "^41.3.0"
+  }
+}
