@@ -142,5 +142,6 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
-
+doctor-data/
+patient-data/
 data

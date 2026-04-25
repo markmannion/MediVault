@@ -3,9 +3,9 @@
   "type": "module",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "electron ."
   },
   "keywords": [],
   "author": "",
@@ -14,5 +14,8 @@
     "b4a": "^1.8.0",
     "hypercore": "^11.28.1",
     "hyperswarm": "^4.17.0"
+  },
+  "devDependencies": {
+    "electron": "^41.3.0"
   }
 }

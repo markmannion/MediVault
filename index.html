@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Decentralized Medical Sync</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; padding: 20px; background: #f4f4f9; color: #333; }
+    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    input, button { padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; }
+    button { background: #007bff; color: white; cursor: pointer; border: none; font-weight: bold; }
+    button:hover { background: #0056b3; }
+    #records { background: #222; color: #0f0; padding: 15px; border-radius: 4px; height: 200px; overflow-y: auto; font-family: monospace; }
+    #doctor-controls { display: none; margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; }
+  </style>
+</head>
+<body>
+
+  <div class="card" id="setup-panel">
+    <h2>Select Role</h2>
+    <select id="role-select" style="padding: 10px; border-radius: 4px;">
+      <option value="doctor">🩺 Doctor (Create Ledger)</option>
+      <option value="patient">🧑‍⚕️ Patient (Join Swarm)</option>
+    </select>
+    
+    <div id="patient-key-input" style="display: none; margin-top: 10px;">
+      <input type="text" id="connection-key" placeholder="Paste Doctor's Hex Key Here" style="width: 100%;">
+    </div>
+
+    <button id="connect-btn" style="width: 100%; margin-top: 15px;">Initialize Decentralized Node</button>
+  </div>
+
+  <div class="card">
+    <h3>System Status</h3>
+    <div id="status" style="font-weight: bold; color: #555;">Waiting for initialization...</div>
+    
+    <div id="doctor-controls">
+      <input type="text" id="note-input" placeholder="Enter secure medical note..." style="width: 70%;">
+      <button id="send-note-btn">Push to Ledger</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Decentralized Ledger Records</h3>
+    <div id="records"></div>
+  </div>
+
+  <script src="./renderer.js"></script>
+</body>
+</html>
