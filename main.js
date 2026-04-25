@@ -1,7 +1,6 @@
 import { app, BrowserWindow, ipcMain, Menu, dialog } from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import crypto from 'crypto'
 import Hypercore from 'hypercore'
 import Hyperswarm from 'hyperswarm'
 import b4a from 'b4a'
@@ -31,13 +30,6 @@ function createWindow() {
 
 app.whenReady().then(createWindow)
 
-// Derive a deterministic 32-byte Hypercore key from a human-readable doctor ID.
-// SHA-256 always produces the same key for the same input, so both doctor and
-// patient independently arrive at the same key without exchanging a hex string.
-function deriveKeyFromDoctorId(doctorId) {
-    return crypto.createHash('sha256').update(doctorId.trim().toLowerCase()).digest()
-}
-
 // Sanitise a raw Hypercore block into a plain object safe for IPC structured clone
 function toPlainRecord(block) {
     return {
@@ -54,63 +46,53 @@ function toPlainRecord(block) {
 ipcMain.on('init-p2p', async (event, data) => {
     console.log('Backend - Received data:', JSON.stringify(data))
 
-    const { role, doctorId, doctorName: name, patientId: id } = data
+    const { role, keyString, secretKey, doctorName: name, patientId: id } = data
     const isDoctor = role === 'doctor'
 
-    console.log('Backend - Parsed values:', { role, doctorId, name, id, isDoctor })
+    console.log('Backend - Parsed values:', { role, name, id, isDoctor, hasSecretKey: !!secretKey })
 
     if (isDoctor) {
         if (!name || !name.trim()) {
             mainWindow.webContents.send('p2p-status', 'Error: Doctor name is required')
             return
         }
-        if (!doctorId || !doctorId.trim()) {
-            mainWindow.webContents.send('p2p-status', 'Error: Doctor ID is required')
-            return
-        }
-
         doctorName = name.trim()
         patientId = null
-
-        // Warn if a doctor-data store already exists with a different derived key,
-        // which means another doctor ID was used on this machine previously.
-        const derivedKey = deriveKeyFromDoctorId(doctorId)
-        const dataDir = './doctor-data'
-        if (fs.existsSync(path.join(dataDir, 'key'))) {
-            const storedKey = fs.readFileSync(path.join(dataDir, 'key'))
-            if (!storedKey.equals(derivedKey)) {
-                mainWindow.webContents.send('p2p-status',
-                    'Warning: A different Doctor ID was used on this machine previously. ' +
-                    'Delete the doctor-data folder to start fresh with this ID.')
-                return
-            }
-        }
-
-        core = new Hypercore(dataDir, derivedKey, { valueEncoding: 'json' })
     } else {
         if (!id || !id.trim()) {
             mainWindow.webContents.send('p2p-status', 'Error: Patient ID is required')
             return
         }
-        if (!doctorId || !doctorId.trim()) {
-            mainWindow.webContents.send('p2p-status', 'Error: Doctor ID is required')
-            return
-        }
-
         patientId = id.trim()
-
-        // Derive the same key from the doctor ID the patient typed
-        const derivedKey = deriveKeyFromDoctorId(doctorId)
-        core = new Hypercore('./patient-data', derivedKey, { valueEncoding: 'json' })
     }
+
+    // When a doctor imports their keypair from another machine, both the public
+    // key and secret key are provided — Hypercore needs the full keypair to sign
+    // new blocks. Patients only ever provide the public key (keyString).
+    let hypercoreKey = null
+    let hypercoreKeyPair = null
+    if (isDoctor && keyString && secretKey) {
+        hypercoreKeyPair = {
+            publicKey: b4a.from(keyString, 'hex'),
+            secretKey: b4a.from(secretKey, 'hex')
+        }
+    } else if (keyString) {
+        hypercoreKey = b4a.from(keyString, 'hex')
+    }
+
+    core = new Hypercore(
+        isDoctor ? './doctor-data' : './patient-data',
+        hypercoreKeyPair ?? hypercoreKey,
+        { valueEncoding: 'json' }
+    )
 
     await core.ready()
 
     if (isDoctor) {
-        mainWindow.webContents.send('p2p-status', `Ledger ready. Your Doctor ID is: ${data.doctorId.trim()}`)
-        mainWindow.webContents.send('p2p-key', data.doctorId.trim())
+        const doctorKey = b4a.toString(core.key, 'hex')
+        mainWindow.webContents.send('p2p-status', `Doctor Core Created (${doctorName}). Share this key:\n${doctorKey}`)
+        mainWindow.webContents.send('p2p-key', doctorKey)
 
-        // Doctors see every record appended locally
         core.on('append', async () => {
             const block = await core.get(core.length - 1)
             mainWindow.webContents.send('p2p-record', toPlainRecord(block))
@@ -140,7 +122,6 @@ ipcMain.on('init-p2p', async (event, data) => {
         core.on('append', sendNewBlocks)
     }
 
-    // Initialize Hyperswarm
     swarm = new Hyperswarm()
     swarm.on('connection', (conn) => {
         mainWindow.webContents.send('p2p-status', '🟢 Secure P2P Connection Established!')
@@ -166,8 +147,66 @@ ipcMain.on('add-note', async (event, noteData) => {
     }
 })
 
+// Export keypair: saves the core's public key + secret key to a .medivault file
+ipcMain.on('export-keypair', async () => {
+    if (!core) return
+
+    try {
+        const savePath = await dialog.showSaveDialog({
+            title: 'Export Doctor Keypair',
+            defaultPath: `medivault-keypair-${doctorName || 'doctor'}.medivault`,
+            filters: [{ name: 'MediVault Keypair', extensions: ['medivault'] }]
+        })
+
+        if (savePath.canceled) return
+
+        const keypair = {
+            publicKey: b4a.toString(core.key, 'hex'),
+            secretKey: b4a.toString(core.keyPair.secretKey, 'hex'),
+            doctorName: doctorName
+        }
+
+        fs.writeFileSync(savePath.filePath, JSON.stringify(keypair, null, 2))
+        mainWindow.webContents.send('p2p-status', `Keypair exported to ${path.basename(savePath.filePath)}. Keep this file safe — it is your identity.`)
+    } catch (err) {
+        console.error('Export failed:', err)
+        mainWindow.webContents.send('p2p-status', 'Error: Failed to export keypair.')
+    }
+})
+
+// Import keypair: reads a .medivault file and sends the keys back to the renderer
+// so it can pre-fill the connection form and initialise with the existing identity
+ipcMain.on('import-keypair', async () => {
+    try {
+        const openPath = await dialog.showOpenDialog({
+            title: 'Import Doctor Keypair',
+            filters: [{ name: 'MediVault Keypair', extensions: ['medivault'] }],
+            properties: ['openFile']
+        })
+
+        if (openPath.canceled || !openPath.filePaths.length) return
+
+        const raw = fs.readFileSync(openPath.filePaths[0], 'utf8')
+        const keypair = JSON.parse(raw)
+
+        if (!keypair.publicKey || !keypair.secretKey) {
+            mainWindow.webContents.send('p2p-status', 'Error: Invalid keypair file.')
+            return
+        }
+
+        mainWindow.webContents.send('keypair-imported', {
+            publicKey: keypair.publicKey,
+            secretKey: keypair.secretKey,
+            doctorName: keypair.doctorName || ''
+        })
+    } catch (err) {
+        console.error('Import failed:', err)
+        mainWindow.webContents.send('p2p-status', 'Error: Could not read keypair file.')
+    }
+})
+
 // Handle PDF download
-ipcMain.on('download-pdf', async (event) => {
+ipcMain.on('download-pdf', async () => {
     try {
         const pdfPath = await dialog.showSaveDialog({
             title: 'Save Medical Records Ledger',

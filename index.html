@@ -575,22 +575,28 @@
                         </select>
                     </div>
 
-                    <!-- DOCTOR FIELDS -->
+                    <!-- DOCTOR NAME INPUT -->
                     <div id="doctor-name-input">
-                        <label for="doctor-name">Your Name</label>
+                        <label for="doctor-name">Doctor's Name</label>
                         <input type="text" id="doctor-name" placeholder="Enter your full name">
 
-                        <label for="doctor-id">Your Doctor ID</label>
-                        <input type="text" id="doctor-id" placeholder="Choose a unique ID (e.g. dr-smith-cardiology)">
+                        <div id="import-keypair-section"
+                            style="margin-top: 12px; padding: 12px; background: var(--neutral-light-gray); border-radius: var(--border-radius); border: 1px dashed var(--neutral-border-gray);">
+                            <p style="font-size: 13px; color: #666; margin: 0 0 8px 0;">Switching computers? Import your
+                                existing keypair to keep your identity.</p>
+                            <button id="import-keypair-btn" type="button"
+                                style="width: auto; padding: 8px 14px; margin: 0; background: var(--accent-teal); color: white; font-size: 13px;">Import
+                                Keypair</button>
+                        </div>
                     </div>
 
-                    <!-- PATIENT FIELDS (Patient ID + Doctor ID) -->
+                    <!-- PATIENT FIELDS (Patient ID + Doctor's Key) -->
                     <div id="patient-key-input">
                         <label for="patient-id">Your Patient ID</label>
                         <input type="text" id="patient-id" placeholder="Enter your patient ID">
 
-                        <label for="connection-key">Doctor's ID</label>
-                        <input type="text" id="connection-key" placeholder="Enter your doctor's ID">
+                        <label for="connection-key">Doctor's Public Key</label>
+                        <input type="text" id="connection-key" placeholder="Paste the doctor's public key here">
                     </div>
 
                     <button id="connect-btn">Initialize Secure Connection</button>
@@ -621,7 +627,14 @@
 
                 <!-- DOCTOR CONTROLS CARD -->
                 <div class="card" id="doctor-controls">
-                    <h3>Add Medical Note</h3>
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--neutral-border-gray); padding-bottom: 12px;">
+                        <h3 style="margin: 0; padding: 0; border: none;">Add Medical Note</h3>
+                        <button id="export-keypair-btn" type="button"
+                            style="width: auto; margin: 0; padding: 8px 12px; background: var(--primary-dark-blue); color: white; font-size: 13px;"
+                            title="Save your keypair to a file so you can use this identity on another computer">Export
+                            Keypair</button>
+                    </div>
 
                     <label for="add-note-patient-id"
                         style="font-size: 13px; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Patient

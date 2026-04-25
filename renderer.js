@@ -123,19 +123,12 @@ roleSelect.addEventListener('change', (e) => {
 // Initialize P2P
 connectBtn.addEventListener('click', () => {
     const doctorNameField = document.getElementById('doctor-name');
-    const doctorIdField = document.getElementById('doctor-id');
     const patientIdField = document.getElementById('patient-id');
-    const connectionKeyField = document.getElementById('connection-key');
-
     const doctorName = doctorNameField ? doctorNameField.value.trim() : '';
-    // For doctors: their own chosen ID. For patients: the doctor's ID they type in.
-    const doctorId = currentRole === 'doctor'
-        ? (doctorIdField ? doctorIdField.value.trim() : '')
-        : (connectionKeyField ? connectionKeyField.value.trim() : '');
     const patientId = patientIdField ? patientIdField.value.trim() : '';
+    const keyString = document.getElementById('connection-key') ? document.getElementById('connection-key').value.trim() : '';
 
     console.log('Renderer - Doctor Name:', doctorName);
-    console.log('Renderer - Doctor ID:', doctorId);
     console.log('Renderer - Patient ID:', patientId);
     console.log('Renderer - Current Role:', currentRole);
 
@@ -145,23 +138,31 @@ connectBtn.addEventListener('click', () => {
             alert('Please enter your name to initialize the connection');
             return;
         }
-        if (!doctorId) {
-            alert('Please enter a Doctor ID to initialize the connection');
-            return;
-        }
     } else {
         if (!patientId) {
             alert('Please enter your Patient ID to connect');
             return;
         }
-        if (!doctorId) {
-            alert("Please enter your doctor's ID to connect");
+        if (!keyString) {
+            alert("Please enter the doctor's public key to connect");
             return;
         }
     }
 
     currentPatientId = patientId;
-    window.p2pAPI.init({ role: currentRole, doctorId, doctorName, patientId });
+
+    // If a keypair was imported, pass the secret key so main.js can restore
+    // the exact same Hypercore identity on this new machine
+    const importedSecretKey = connectBtn.dataset.importedSecretKey || null;
+    const importedPublicKey = connectBtn.dataset.importedPublicKey || null;
+
+    window.p2pAPI.init({
+        role: currentRole,
+        keyString: importedPublicKey || keyString,
+        secretKey: importedSecretKey,
+        doctorName,
+        patientId
+    });
 
     connectBtn.disabled = true;
     roleSelect.disabled = true;
@@ -240,13 +241,39 @@ window.p2pAPI.onRecord((record) => {
     renderRecords();
 });
 
-// Handle confirmation from main process that the ledger is ready (doctor only)
-window.p2pAPI.onKey((doctorId) => {
+// Handle P2P key (doctor role only — patients never receive this event)
+window.p2pAPI.onKey((key) => {
     if (currentRole === 'doctor') {
-        statusDiv.textContent = `Ledger ready. Share your Doctor ID with patients: ${doctorId}`;
+        statusDiv.textContent = `Ledger created. Share this key with patients: ${key}`;
         doctorControls.style.display = 'block';
     }
 });
+
+// When a keypair file is imported, pre-fill the doctor name field and store
+// the keys on the button so the init handler can pass them to main.js
+window.p2pAPI.onKeypairImported(({ publicKey, secretKey, doctorName: importedName }) => {
+    const doctorNameField = document.getElementById('doctor-name');
+    if (doctorNameField && importedName) doctorNameField.value = importedName;
+    connectBtn.dataset.importedSecretKey = secretKey;
+    connectBtn.dataset.importedPublicKey = publicKey;
+    statusDiv.textContent = `Keypair loaded for ${importedName || 'doctor'}. Click "Initialize Secure Connection" to continue.`;
+});
+
+// Export keypair — visible inside doctor controls after connection is established
+const exportKeypairBtn = document.getElementById('export-keypair-btn');
+if (exportKeypairBtn) {
+    exportKeypairBtn.addEventListener('click', () => {
+        window.p2pAPI.exportKeypair();
+    });
+}
+
+// Import keypair — visible in setup card before connection
+const importKeypairBtn = document.getElementById('import-keypair-btn');
+if (importKeypairBtn) {
+    importKeypairBtn.addEventListener('click', () => {
+        window.p2pAPI.importKeypair();
+    });
+}
 
 if (downloadPdfBtn) {
     downloadPdfBtn.addEventListener('click', () => {
