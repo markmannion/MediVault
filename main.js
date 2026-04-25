@@ -73,26 +73,33 @@ ipcMain.on('init-p2p', async (event, data) => {
     const doctorKey = b4a.toString(core.key, 'hex')
     mainWindow.webContents.send('p2p-status', `Doctor Core Created (${doctorName}). Share this key:\n${doctorKey}`)
     mainWindow.webContents.send('p2p-key', doctorKey)
+
+    // Doctors see every record appended locally
+    core.on('append', async () => {
+      const latestRecord = await core.get(core.length - 1)
+      mainWindow.webContents.send('p2p-record', latestRecord)
+    })
   } else {
     mainWindow.webContents.send('p2p-status', 'Connecting to DHT and searching for Doctor...')
-    // Read existing history - only send records matching the patient ID
-    for (let i = 0; i < core.length; i++) {
-      const block = await core.get(i)
-      // Only send records that match this patient's ID
-      if (block.patientId === patientId) {
-        mainWindow.webContents.send('p2p-record', block)
-      }
-    }
-  }
 
-  // Listen for real-time updates
-  core.on('append', async () => {
-    const latestRecord = await core.get(core.length - 1)
-    // Only send records that match the current user's filter
-    if (isDoctor || latestRecord.patientId === patientId) {
-      mainWindow.webContents.send('p2p-record', latestRecord)
+    // Track which blocks have already been sent to avoid duplicates
+    let sentUpTo = 0
+
+    // Called whenever new blocks are available (downloaded via replication)
+    const sendNewBlocks = async () => {
+      const length = core.length
+      for (let i = sentUpTo; i < length; i++) {
+        const block = await core.get(i)
+        if (block.patientId === patientId) {
+          mainWindow.webContents.send('p2p-record', block)
+        }
+      }
+      sentUpTo = length
     }
-  })
+
+    // 'append' fires for both local writes and blocks received over replication
+    core.on('append', sendNewBlocks)
+  }
 
   // Initialize Hyperswarm
   swarm = new Hyperswarm()
