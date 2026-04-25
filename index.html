@@ -1,674 +1,117 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MediVault</title>
     <style>
+        /* Keep all your existing CSS variables and base styles */
         :root {
-            /* Clinical Color Palette */
-            --primary-dark-blue: #22577A;
-            --accent-teal: #38A3A5;
-            --success-mint: #57CC99;
-            --light-pale-green: #80ED99;
-            --light-off-white: #C7F9CC;
-            --neutral-white: #ffffff;
-            --neutral-light-gray: #f5f5f5;
-            --neutral-border-gray: #e0e0e0;
-            --neutral-text-gray: #cccccc;
-            --shadow-subtle: 0 2px 4px rgba(0, 0, 0, 0.05);
-            --border-radius: 4px;
+            --primary-dark-blue: #22577A; --accent-teal: #38A3A5;
+            --success-mint: #57CC99; --light-off-white: #C7F9CC;
+            --neutral-white: #ffffff; --neutral-light-gray: #f5f5f5;
+            --neutral-border-gray: #e0e0e0; --border-radius: 4px;
             --transition: all 0.2s ease;
         }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html,
-        body {
-            height: 100%;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #cbf4d2;
-            color: var(--primary-dark-blue);
-            padding: 20px;
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .layout-grid {
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 20px;
-            align-items: start;
-        }
-
-        .doctor-filter {
-            padding: 12px 15px;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            margin-bottom: 8px;
-            background: var(--neutral-light-gray);
-            border-left: 4px solid transparent;
-            transition: var(--transition);
-            font-size: 14px;
-            color: var(--primary-dark-blue);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .doctor-filter:hover {
-            background: #e9ecef;
-            border-left-color: #adb5bd;
-        }
-
-        .doctor-filter.active {
-            background: var(--light-off-white);
-            border-left-color: var(--accent-teal);
-            font-weight: 600;
-        }
-
-        @media (max-width: 768px) {
-            .layout-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* ========== HEADER ========== */
-        .header {
-            margin-bottom: 30px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .header-logo {
-            width: 200px;
-            height: auto;
-            display: block;
-        }
-
-        .header-subtitle {
-            font-size: 14px;
-            color: #666;
-            margin: 0;
-        }
-
-        /* ========== HEADER DIVIDER ========== */
-        .header-divider {
-            width: 60px;
-            height: 3px;
-            background: linear-gradient(90deg, var(--accent-teal), var(--success-mint));
-            border-radius: 2px;
-            margin: 5px 0 0 0;
-        }
-
-        @media (max-width: 600px) {
-            .header {
-                gap: 10px;
-            }
-
-            .header-logo {
-                width: 150px;
-            }
-
-            .header-subtitle {
-                font-size: 13px;
-            }
-        }
-
-        /* ========== CARDS/PANELS ========== */
-        .card {
-            background: var(--neutral-white);
-            border-radius: var(--border-radius);
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow-subtle);
-            border: 1px solid var(--neutral-border-gray);
-            transition: var(--transition);
-        }
-
-        .card:hover {
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
-        }
-
-        .card h2,
-        .card h3 {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--primary-dark-blue);
-            margin: 0 0 15px 0;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--neutral-border-gray);
-        }
-
-        .card p {
-            font-size: 14px;
-            color: #666;
-            margin: 0 0 15px 0;
-            line-height: 1.5;
-        }
-
-        /* ========== FORM ELEMENTS ========== */
-        select,
-        input[type="text"],
-        input[type="password"] {
-            width: 100%;
-            padding: 12px 14px;
-            margin: 10px 0;
-            border: 1px solid var(--neutral-text-gray);
-            border-radius: var(--border-radius);
-            font-family: inherit;
-            font-size: 14px;
-            color: var(--primary-dark-blue);
-            background: var(--neutral-white);
-            transition: var(--transition);
-        }
-
-        select:focus,
-        input[type="text"]:focus,
-        input[type="password"]:focus {
-            border-color: var(--accent-teal);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(56, 163, 165, 0.1);
-        }
-
-        select::placeholder,
-        input[type="text"]::placeholder,
-        input[type="password"]::placeholder {
-            color: #999;
-        }
-
-        /* ========== BUTTONS ========== */
-        button {
-            width: 100%;
-            padding: 12px 16px;
-            margin: 10px 0;
-            border: none;
-            border-radius: var(--border-radius);
-            font-family: inherit;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        button:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        button:active:not(:disabled) {
-            transform: translateY(0);
-        }
-
-        button:disabled {
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-        /* Primary Button - Initialize Connection */
-        #connect-btn {
-            background: var(--primary-dark-blue);
-            color: var(--neutral-white);
-            margin-top: 15px;
-        }
-
-        #connect-btn:hover:not(:disabled) {
-            background: #1a4a6b;
-        }
-
-        #connect-btn:disabled {
-            background: #999;
-        }
-
-        /* Secondary Button - Add to Ledger */
-        #send-note-btn {
-            background: var(--accent-teal);
-            color: var(--neutral-white);
-        }
-
-        #send-note-btn:hover:not(:disabled) {
-            background: #2c8a8b;
-        }
-
-        #send-note-btn:disabled {
-            background: #999;
-        }
-
-        /* ========== STATUS PANEL ========== */
-        #status {
-            padding: 15px;
-            background: var(--accent-teal);
-            border-left: 3px solid var(--accent-teal);
-            border-radius: var(--border-radius);
-            font-size: 14px;
-            color: var(--neutral-white);
-            line-height: 1.5;
-            margin: 10px 0;
-        }
-
-        /* ========== ROLE SELECTION ========== */
-        .role-section {
-            margin-bottom: 15px;
-        }
-
-        .role-section label {
-            display: block;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--primary-dark-blue);
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* ========== PATIENT KEY INPUT ========== */
-        #patient-key-input {
-            display: none;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid var(--neutral-border-gray);
-            animation: slideIn 0.3s ease forwards;
-        }
-
-        #patient-key-input.visible {
-            display: block;
-        }
-
-        /* ========== DOCTOR NAME INPUT ========== */
-        #doctor-name-input {
-            display: block;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid var(--neutral-border-gray);
-            animation: slideIn 0.3s ease forwards;
-        }
-
-        #doctor-name-input.hidden {
-            display: none;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        #patient-key-input label {
-            display: block;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--primary-dark-blue);
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* ========== RECORDS LEDGER ========== */
-        #records {
-            background: var(--neutral-white);
-            border: 1px solid var(--neutral-border-gray);
-            border-radius: var(--border-radius);
-            padding: 15px;
-            height: 300px;
-            overflow-y: auto;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        #records::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        #records::-webkit-scrollbar-track {
-            background: var(--neutral-light-gray);
-            border-radius: 3px;
-        }
-
-        #records::-webkit-scrollbar-thumb {
-            background: var(--accent-teal);
-            border-radius: 3px;
-        }
-
-        #records::-webkit-scrollbar-thumb:hover {
-            background: #2c8a8b;
-        }
-
-        .record-entry {
-            padding: 16px;
-            margin-bottom: 16px;
-            background: #fcfcfc;
-            border: 1px solid var(--neutral-border-gray);
-            border-left: 4px solid var(--accent-teal);
-            border-radius: 6px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .record-entry:last-child {
-            margin-bottom: 0;
-        }
-
-        .timestamp {
-            color: var(--success-mint);
-            font-size: 12px;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-
-        .record-entry>div:not(.timestamp) {
-            color: var(--primary-dark-blue);
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        .record-entry strong {
-            color: var(--primary-dark-blue);
-            font-weight: 600;
-        }
-
-        /* ========== DOCTOR CONTROLS ========== */
-        #doctor-controls {
-            display: none;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid var(--neutral-border-gray);
-            animation: slideIn 0.3s ease forwards;
-        }
-
-        #doctor-controls.visible {
-            display: block;
-        }
-
-        #doctor-controls h3 {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--primary-dark-blue);
-            margin: 0 0 15px 0;
-            padding-bottom: 0;
-            border-bottom: none;
-        }
-
-        #note-input {
-            min-height: 80px;
-            padding: 12px 14px;
-            resize: vertical;
-            font-size: 14px;
-            font-family: inherit;
-        }
-
-        /* ========== EMPTY STATE ========== */
-        .empty-state {
-            text-align: center;
-            color: #999;
-            padding: 20px 10px;
-        }
-
-        .empty-state .timestamp {
-            margin-bottom: 8px;
-        }
-
-        /* ========== RESPONSIVE ========== */
-        @media (max-width: 600px) {
-            body {
-                padding: 15px;
-            }
-
-            .card {
-                padding: 15px;
-                margin-bottom: 15px;
-            }
-
-            .header h1 {
-                font-size: 24px;
-            }
-
-            input,
-            select,
-            button {
-                padding: 11px 12px;
-                font-size: 14px;
-            }
-
-            #records {
-                height: 250px;
-            }
-        }
-
-        /* ========== ACCESSIBILITY ========== */
-        button:focus-visible,
-        select:focus-visible,
-        input:focus-visible {
-            outline: 2px solid var(--accent-teal);
-            outline-offset: 2px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        /* ========== PRINT STYLES ========== */
-        @media print {
-            body {
-                background: white;
-                color: black;
-            }
-
-            /* Hide all elements by default */
-            body>*:not(.container) {
-                display: none !important;
-            }
-
-            .container>*:not(.layout-grid) {
-                display: none !important;
-            }
-
-            .layout-grid>*:not(.main-column) {
-                display: none !important;
-            }
-
-            .main-column>*:not(#ledger-card) {
-                display: none !important;
-            }
-
-            #ledger-card>*:not(#records) {
-                display: none !important;
-            }
-
-            /* Reset the layout properties of ancestors so they don't add margins/paddings */
-            .container,
-            .layout-grid,
-            .main-column,
-            #ledger-card,
-            #records {
-                display: block !important;
-                width: 100% !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                border: none !important;
-                box-shadow: none !important;
-                height: auto !important;
-                overflow: visible !important;
-                background: transparent !important;
-            }
-
-            /* Style the individual messages for print */
-            .record-entry {
-                page-break-inside: avoid;
-                border: none !important;
-                border-bottom: 1px solid #ccc !important;
-                margin-bottom: 20px !important;
-                padding: 0 0 20px 0 !important;
-                background: transparent !important;
-                box-shadow: none !important;
-            }
-
-            .record-entry:last-child {
-                border-bottom: none !important;
-            }
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #cbf4d2; color: var(--primary-dark-blue); padding: 20px; line-height: 1.6; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .card { background: var(--neutral-white); border-radius: var(--border-radius); padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid var(--neutral-border-gray); }
+        .card h2, .card h3 { font-size: 16px; font-weight: 600; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 1px solid var(--neutral-border-gray); }
+        select, input[type="text"], input[type="password"] { width: 100%; padding: 12px 14px; margin: 10px 0; border: 1px solid #ccc; border-radius: var(--border-radius); font-size: 14px; }
+        button { width: 100%; padding: 12px 16px; margin: 10px 0; border: none; border-radius: var(--border-radius); font-weight: 500; cursor: pointer; transition: var(--transition); background: var(--accent-teal); color: white; }
+        button:hover { background: #2c8a8b; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .layout-grid { display: grid; grid-template-columns: 280px 1fr; gap: 20px; align-items: start; }
+        
+        /* New utility styles */
+        .hidden { display: none !important; }
+        .key-display { display: flex; gap: 10px; margin-bottom: 15px; }
+        .key-display input { margin: 0; background: var(--neutral-light-gray); color: #666; font-family: monospace; }
+        .key-display button { width: auto; margin: 0; padding: 0 15px; background: var(--primary-dark-blue); }
+        #records { height: 350px; overflow-y: auto; padding: 10px; border: 1px solid var(--neutral-border-gray); border-radius: var(--border-radius); }
+        .record-entry { padding: 16px; margin-bottom: 12px; background: #fcfcfc; border-left: 4px solid var(--accent-teal); border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .timestamp { color: var(--success-mint); font-size: 12px; font-weight: 500; }
     </style>
 </head>
-
 <body>
     <div class="container">
-        <!-- HEADER WITH LOGO -->
         <div class="header">
-            <img src="./mv_logo.png" alt="Medi Vault" class="header-logo" title="Medi Vault - Secure Medical Records">
-            <p class="header-subtitle">Secure peer-to-peer medical record synchronization</p>
-            <div class="header-divider"></div>
+            <h1>MediVault</h1>
+            <p>Encrypted Peer-to-Peer Medical Synchronization</p>
         </div>
 
-        <!-- ROLE SELECTION CARD -->
-        <div class="layout-grid">
-            <!-- SIDEBAR -->
-            <div class="sidebar card">
-                <h3 style="margin-bottom: 15px;">My Care Team</h3>
-                <div id="doctor-list">
-                    <div class="doctor-filter active" data-doctor="all">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            style="color: var(--accent-teal);">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                        </svg>
-                        All Doctors
-                    </div>
+        <div id="auth-view" class="card">
+            <h2>Authentication</h2>
+            <label>Select Role</label>
+            <select id="auth-role">
+                <option value="doctor">Doctor</option>
+                <option value="patient">Patient</option>
+            </select>
+            
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--neutral-border-gray);">
+                <h3>Create New Account</h3>
+                <input type="text" id="auth-name" placeholder="Enter your full name">
+                <button id="btn-register">Generate Identity & Save File</button>
+            </div>
+
+            <div style="text-align:center; margin: 20px 0; color: #999; font-weight: bold;">OR</div>
+
+            <div>
+                <h3>Returning User</h3>
+                <button id="btn-login" style="background: var(--primary-dark-blue);">Import Existing Keypair (.medivault)</button>
+            </div>
+        </div>
+
+        <div id="app-view" class="hidden">
+            <div class="card" style="background: var(--light-off-white);">
+                <h3>My Identity Profile (<span id="profile-name"></span>)</h3>
+                <label>My Public Key (Share this to connect)</label>
+                <div class="key-display">
+                    <input type="text" id="my-public-key" readonly>
+                    <button onclick="navigator.clipboard.writeText(document.getElementById('my-public-key').value)">Copy</button>
                 </div>
             </div>
 
-            <div class="main-column">
-                <div class="card">
-                    <h2>Setup Connection</h2>
-
-                    <div class="role-section">
-                        <label for="role-select">Select Your Role</label>
-                        <select id="role-select">
-                            <option value="doctor">Doctor (Create Ledger)</option>
-                            <option value="patient">Patient (Join Swarm)</option>
-                        </select>
+            <div class="layout-grid">
+                <div class="main-column" style="grid-column: span 2;">
+                    
+                    <div id="doctor-setup" class="card hidden">
+                        <h2>Start Medical Ledger</h2>
+                        <button id="btn-start-ledger" style="background: var(--primary-dark-blue);">Initialize Swarm</button>
+                        <div id="doctor-controls" class="hidden" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--neutral-border-gray);">
+                            <h3>Add Encrypted Note</h3>
+                            <input type="text" id="add-note-patient-id" placeholder="Patient's Public Key">
+                            <input type="password" id="add-note-patient-pin" placeholder="Shared Patient Encryption PIN">
+                            <input type="text" id="add-note-subject" placeholder="Subject (e.g., Checkup)">
+                            <textarea id="note-input" placeholder="Enter medical note details..." style="width: 100%; min-height: 100px; padding: 10px; margin-bottom: 10px;"></textarea>
+                            <input type="file" id="image-input" accept="image/*" style="margin-bottom: 10px;">
+                            <button id="btn-send-note">Encrypt & Add to Ledger</button>
+                        </div>
                     </div>
 
-                    <!-- DOCTOR NAME INPUT -->
-                    <div id="doctor-name-input">
-                        <label for="doctor-name">Doctor's Name</label>
-                        <input type="text" id="doctor-name" placeholder="Enter your full name">
+                    <div id="patient-setup" class="card hidden">
+                        <h2>Connect to Doctor</h2>
+                        <input type="text" id="connect-doc-key" placeholder="Paste Doctor's Public Key">
+                        <input type="password" id="connect-pin" placeholder="Enter your Encryption PIN">
+                        <button id="btn-connect-patient" style="background: var(--primary-dark-blue);">Connect & Decrypt Records</button>
                     </div>
 
-                    <!-- PATIENT KEY INPUT -->
-                    <div id="patient-key-input">
-                        <label for="patient-id">Your Patient ID</label>
-                        <input type="text" id="patient-id" placeholder="Enter your patient ID">
-
-                        <label for="connection-key">Doctor's Public Key</label>
-                        <input type="text" id="connection-key" placeholder="Paste the doctor's public key here">
+                    <div class="card">
+                        <h3>Connection Status</h3>
+                        <div id="status" style="padding: 15px; background: var(--accent-teal); color: white; border-radius: 4px;">Waiting for initialization...</div>
                     </div>
 
-                    <button id="connect-btn">Initialize Secure Connection</button>
-                </div>
-
-                <!-- CONNECTION STATUS CARD -->
-                <div class="card">
-                    <h3>Connection Status</h3>
-                    <div id="status">Waiting for initialization...</div>
-                </div>
-
-                <!-- MEDICAL RECORDS LEDGER CARD -->
-                <div class="card" id="ledger-card">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--neutral-border-gray); padding-bottom: 12px;">
-                        <h3 style="margin: 0; padding: 0; border: none;">Medical Records Ledger</h3>
-                        <button id="download-pdf-btn"
-                            style="width: auto; margin: 0; padding: 8px 12px; background: var(--primary-dark-blue); color: white; font-size: 13px;">Download
-                            PDF</button>
-                    </div>
-                    <div id="records">
-                        <div class="record-entry empty-state">
-                            <div class="timestamp">--</div>
-                            <div>No records yet. Connect to sync medical data.</div>
+                    <div class="card">
+                        <h3>Medical Records</h3>
+                        <div id="records">
+                            <div style="text-align: center; color: #999; padding: 20px;">No records yet.</div>
                         </div>
                     </div>
                 </div>
-
-                <!-- DOCTOR CONTROLS CARD -->
-                <div class="card" id="doctor-controls">
-                    <h3>Add Medical Note</h3>
-
-                    <label for="add-note-patient-id"
-                        style="font-size: 13px; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Patient
-                        ID</label>
-                    <input type="text" id="add-note-patient-id" placeholder="Enter the patient's ID..."
-                        style="margin-top: 0; margin-bottom: 15px;">
-
-                    <label for="subject-input"
-                        style="font-size: 13px; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Subject</label>
-                    <input type="text" id="subject-input"
-                        placeholder="Enter subject (e.g., Routine Checkup, Prescription)..."
-                        style="margin-top: 0; margin-bottom: 15px;">
-
-                    <label for="note-input"
-                        style="font-size: 13px; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Body</label>
-                    <div style="position: relative;">
-                        <textarea id="note-input" placeholder="Enter medical note details..."
-                            style="width: 100%; padding: 12px 14px; margin: 0 0 10px 0; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 14px; resize: vertical; min-height: 120px; color: #22577A; padding-right: 40px;"></textarea>
-                        <button id="attach-btn" title="Attach Image"
-                            style="position: absolute; right: 10px; bottom: 20px; width: auto; padding: 5px; margin: 0; background: none; border: none; cursor: pointer; color: #38A3A5; box-shadow: none;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path
-                                    d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48">
-                                </path>
-                            </svg>
-                        </button>
-                    </div>
-                    <input type="file" id="image-input" accept="image/*" style="display: none;">
-                    <div id="image-preview" style="display: none; margin-bottom: 10px; align-items: center; gap: 10px;">
-                        <img id="preview-img" src=""
-                            style="max-width: 100px; max-height: 100px; border-radius: 4px; border: 1px solid #ccc;">
-                        <button id="remove-img-btn"
-                            style="width: auto; padding: 6px 12px; margin: 0; background: #e74c3c; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Remove</button>
-                    </div>
-                    <button id="send-note-btn">Add to Ledger</button>
-                </div>
-            </div> <!-- END MAIN COLUMN -->
-        </div> <!-- END LAYOUT GRID -->
+            </div>
+        </div>
     </div>
-
     <script src="./renderer.js"></script>
-
-    <!-- Image Zoom Modal -->
-    <div id="image-modal"
-        style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; cursor: zoom-out;"
-        onclick="this.style.display='none'">
-        <img id="modal-img" src=""
-            style="max-width: 90%; max-height: 90%; object-fit: contain; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
-    </div>
 </body>
-
 </html>
