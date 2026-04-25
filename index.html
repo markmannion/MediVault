@@ -548,7 +548,7 @@
 
     // Initialize P2P
     connectBtn.addEventListener('click', () => {
-      const doctorName = doctorNameField.value || 'Doctor';
+      const doctorName = doctorNameField.value;
       const keyString = document.getElementById('connection-key').value;
       window.p2pAPI?.init?.({ role: currentRole, keyString, doctorName });
 
