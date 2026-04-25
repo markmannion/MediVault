@@ -43,6 +43,9 @@ function decryptPayload(encObj, secretPin) {
 }
 
 function createWindow() {
+    // Define icon path
+    const iconPath = path.join(__dirname, 'taskbar_logo.jpeg')
+
     mainWindow = new BrowserWindow({
         width: 1000,
         height: 700,
