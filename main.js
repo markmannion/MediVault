@@ -15,17 +15,22 @@ let doctorName = null
 let patientId = null
 
 function createWindow() {
+    // Define icon path
+    const iconPath = path.join(__dirname, 'taskbar_logo.jpeg')
+
     mainWindow = new BrowserWindow({
         width: 800,
         height: 600,
+        icon: iconPath,
         webPreferences: {
-        preload: path.join(__dirname, 'preload.js'),
-        contextIsolation: true,
-        nodeIntegration: false
+            preload: path.join(__dirname, 'preload.js'),
+            contextIsolation: true,
+            nodeIntegration: false
         }
     })
+
     Menu.setApplicationMenu(null)
-  mainWindow.loadFile('index.html')
+    mainWindow.loadFile('index.html')
 }
 
 app.whenReady().then(createWindow)
