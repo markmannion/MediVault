@@ -548,8 +548,18 @@
 
     // Initialize P2P
     connectBtn.addEventListener('click', () => {
-      const doctorName = doctorNameField.value;
+      const doctorName = doctorNameField.value.trim();
       const keyString = document.getElementById('connection-key').value;
+      
+      console.log('Debug - Doctor Name:', doctorName);
+      console.log('Debug - Current Role:', currentRole);
+      
+      // Validate doctor name if role is doctor
+      if (currentRole === 'doctor' && !doctorName) {
+        alert('Please enter your name to initialize the connection');
+        return;
+      }
+      
       window.p2pAPI?.init?.({ role: currentRole, keyString, doctorName });
 
       connectBtn.disabled = true;
