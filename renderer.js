@@ -17,7 +17,7 @@ roleSelect.addEventListener('change', (e) => {
 
 // Initialize P2P
 connectBtn.addEventListener('click', () => {
-  const keyString = document.getElementById('connection-key').value
+  const keyString = currentRole === 'patient' ? patientKeyInput.value : document.getElementById('connection-key').value
   window.p2pAPI.init({ role: currentRole, keyString })
   
   connectBtn.disabled = true
