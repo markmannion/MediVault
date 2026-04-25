@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu } from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import Hypercore from 'hypercore'
@@ -12,15 +12,16 @@ let core
 let swarm
 
 function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false
-    }
-  })
+    mainWindow = new BrowserWindow({
+        width: 800,
+        height: 600,
+        webPreferences: {
+        preload: path.join(__dirname, 'preload.js'),
+        contextIsolation: true,
+        nodeIntegration: false
+        }
+    })
+    Menu.setApplicationMenu(null)
   mainWindow.loadFile('index.html')
 }
 
