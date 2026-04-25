@@ -2,48 +2,550 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Decentralized Medical Sync</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediVault</title>
   <style>
-    body { font-family: -apple-system, sans-serif; padding: 20px; background: #f4f4f9; color: #333; }
-    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    input, button { padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; }
-    button { background: #007bff; color: white; cursor: pointer; border: none; font-weight: bold; }
-    button:hover { background: #0056b3; }
-    #records { background: #222; color: #0f0; padding: 15px; border-radius: 4px; height: 200px; overflow-y: auto; font-family: monospace; }
-    #doctor-controls { display: none; margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; }
+    :root {
+      /* Clinical Color Palette */
+      --primary-dark-blue: #22577A;
+      --accent-teal: #38A3A5;
+      --success-mint: #57CC99;
+      --light-pale-green: #80ED99;
+      --light-off-white: #C7F9CC;
+      --neutral-white: #ffffff;
+      --neutral-light-gray: #f5f5f5;
+      --neutral-border-gray: #e0e0e0;
+      --neutral-text-gray: #cccccc;
+      --shadow-subtle: 0 2px 4px rgba(0, 0, 0, 0.05);
+      --border-radius: 4px;
+      --transition: all 0.2s ease;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, var(--neutral-light-gray) 0%, #fafafa 100%);
+      color: var(--primary-dark-blue);
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* ========== HEADER ========== */
+    .header {
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--primary-dark-blue);
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .header p {
+      font-size: 14px;
+      color: #666;
+      margin: 0;
+    }
+
+    /* ========== CARDS/PANELS ========== */
+    .card {
+      background: var(--neutral-white);
+      border-radius: var(--border-radius);
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-subtle);
+      border: 1px solid var(--neutral-border-gray);
+      transition: var(--transition);
+    }
+
+    .card:hover {
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .card h2, .card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--primary-dark-blue);
+      margin: 0 0 15px 0;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--neutral-border-gray);
+    }
+
+    .card p {
+      font-size: 14px;
+      color: #666;
+      margin: 0 0 15px 0;
+      line-height: 1.5;
+    }
+
+    /* ========== FORM ELEMENTS ========== */
+    select, input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 12px 14px;
+      margin: 10px 0;
+      border: 1px solid var(--neutral-text-gray);
+      border-radius: var(--border-radius);
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--primary-dark-blue);
+      background: var(--neutral-white);
+      transition: var(--transition);
+    }
+
+    select:focus, input[type="text"]:focus, input[type="password"]:focus {
+      border-color: var(--accent-teal);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(56, 163, 165, 0.1);
+    }
+
+    select::placeholder, input[type="text"]::placeholder, input[type="password"]::placeholder {
+      color: #999;
+    }
+
+    /* ========== BUTTONS ========== */
+    button {
+      width: 100%;
+      padding: 12px 16px;
+      margin: 10px 0;
+      border: none;
+      border-radius: var(--border-radius);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    /* Primary Button - Initialize Connection */
+    #connect-btn {
+      background: var(--primary-dark-blue);
+      color: var(--neutral-white);
+      margin-top: 15px;
+    }
+
+    #connect-btn:hover:not(:disabled) {
+      background: #1a4a6b;
+    }
+
+    #connect-btn:disabled {
+      background: #999;
+    }
+
+    /* Secondary Button - Add to Ledger */
+    #send-note-btn {
+      background: var(--accent-teal);
+      color: var(--neutral-white);
+    }
+
+    #send-note-btn:hover:not(:disabled) {
+      background: #2c8a8b;
+    }
+
+    #send-note-btn:disabled {
+      background: #999;
+    }
+
+    /* ========== STATUS PANEL ========== */
+    #status {
+      padding: 15px;
+      background: var(--light-off-white);
+      border-left: 3px solid var(--accent-teal);
+      border-radius: var(--border-radius);
+      font-size: 14px;
+      color: var(--primary-dark-blue);
+      line-height: 1.5;
+      margin: 10px 0;
+    }
+
+    /* ========== ROLE SELECTION ========== */
+    .role-section {
+      margin-bottom: 15px;
+    }
+
+    .role-section label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--primary-dark-blue);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ========== PATIENT KEY INPUT ========== */
+    #patient-key-input {
+      display: none;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid var(--neutral-border-gray);
+      animation: slideIn 0.3s ease forwards;
+    }
+
+    #patient-key-input.visible {
+      display: block;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    #patient-key-input label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--primary-dark-blue);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ========== RECORDS LEDGER ========== */
+    #records {
+      background: var(--neutral-white);
+      border: 1px solid var(--neutral-border-gray);
+      border-radius: var(--border-radius);
+      padding: 15px;
+      height: 300px;
+      overflow-y: auto;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    #records::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #records::-webkit-scrollbar-track {
+      background: var(--neutral-light-gray);
+      border-radius: 3px;
+    }
+
+    #records::-webkit-scrollbar-thumb {
+      background: var(--accent-teal);
+      border-radius: 3px;
+    }
+
+    #records::-webkit-scrollbar-thumb:hover {
+      background: #2c8a8b;
+    }
+
+    .record-entry {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--neutral-border-gray);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .record-entry:last-child {
+      border-bottom: none;
+    }
+
+    .record-entry:first-child {
+      padding-top: 0;
+    }
+
+    .timestamp {
+      color: var(--success-mint);
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .record-entry > div:not(.timestamp) {
+      color: var(--primary-dark-blue);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .record-entry strong {
+      color: var(--primary-dark-blue);
+      font-weight: 600;
+    }
+
+    /* ========== DOCTOR CONTROLS ========== */
+    #doctor-controls {
+      display: none;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--neutral-border-gray);
+      animation: slideIn 0.3s ease forwards;
+    }
+
+    #doctor-controls.visible {
+      display: block;
+    }
+
+    #doctor-controls h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--primary-dark-blue);
+      margin: 0 0 15px 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    #note-input {
+      min-height: 80px;
+      padding: 12px 14px;
+      resize: vertical;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    /* ========== EMPTY STATE ========== */
+    .empty-state {
+      text-align: center;
+      color: #999;
+      padding: 20px 10px;
+    }
+
+    .empty-state .timestamp {
+      margin-bottom: 8px;
+    }
+
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 600px) {
+      body {
+        padding: 15px;
+      }
+
+      .card {
+        padding: 15px;
+        margin-bottom: 15px;
+      }
+
+      .header h1 {
+        font-size: 24px;
+      }
+
+      input, select, button {
+        padding: 11px 12px;
+        font-size: 14px;
+      }
+
+      #records {
+        height: 250px;
+      }
+    }
+
+    /* ========== ACCESSIBILITY ========== */
+    button:focus-visible, select:focus-visible, input:focus-visible {
+      outline: 2px solid var(--accent-teal);
+      outline-offset: 2px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
   </style>
 </head>
 <body>
-
-  <div class="card" id="setup-panel">
-    <h2>Select Role</h2>
-    <select id="role-select" style="padding: 10px; border-radius: 4px;">
-      <option value="doctor">🩺 Doctor (Create Ledger)</option>
-      <option value="patient">🧑‍⚕️ Patient (Join Swarm)</option>
-    </select>
-    
-    <div id="patient-key-input" style="display: none; margin-top: 10px;">
-      <input type="text" id="connection-key" placeholder="Paste Doctor's Hex Key Here" style="width: 100%;">
+  <div class="container">
+    <!-- HEADER -->
+    <div class="header">
+      <h1>MediVault</h1>
+      <p>Secure peer-to-peer medical record synchronization</p>
     </div>
 
-    <button id="connect-btn" style="width: 100%; margin-top: 15px;">Initialize Decentralized Node</button>
-  </div>
+    <!-- ROLE SELECTION CARD -->
+    <div class="card">
+      <h2>Setup Connection</h2>
 
-  <div class="card">
-    <h3>System Status</h3>
-    <div id="status" style="font-weight: bold; color: #555;">Waiting for initialization...</div>
-    
-    <div id="doctor-controls">
-      <input type="text" id="note-input" placeholder="Enter secure medical note..." style="width: 70%;">
-      <button id="send-note-btn">Push to Ledger</button>
+      <div class="role-section">
+        <label for="role-select">Select Your Role</label>
+        <select id="role-select">
+          <option value="doctor">Doctor (Create Ledger)</option>
+          <option value="patient">Patient (Join Swarm)</option>
+        </select>
+      </div>
+
+      <!-- PATIENT KEY INPUT -->
+      <div id="patient-key-input">
+        <label for="connection-key">Doctor's Public Key</label>
+        <input
+          type="text"
+          id="connection-key"
+          placeholder="Paste the doctor's public key here"
+        >
+      </div>
+
+      <button id="connect-btn">Initialize Secure Connection</button>
     </div>
-  </div>
 
-  <div class="card">
-    <h3>Decentralized Ledger Records</h3>
-    <div id="records"></div>
+    <!-- CONNECTION STATUS CARD -->
+    <div class="card">
+      <h3>Connection Status</h3>
+      <div id="status">Waiting for initialization...</div>
+    </div>
+
+    <!-- MEDICAL RECORDS LEDGER CARD -->
+    <div class="card">
+      <h3>Medical Records Ledger</h3>
+      <div id="records">
+        <div class="record-entry empty-state">
+          <div class="timestamp">--</div>
+          <div>No records yet. Connect to sync medical data.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DOCTOR CONTROLS CARD -->
+    <div class="card" id="doctor-controls">
+      <h3>Add Medical Note</h3>
+      <label for="note-input" style="font-size: 13px; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Medical Note</label>
+      <textarea
+        id="note-input"
+        placeholder="Enter medical note (e.g., patient observations, prescriptions)..."
+        style="width: 100%; padding: 12px 14px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 14px; resize: vertical; min-height: 80px; color: #22577A;"
+      ></textarea>
+      <button id="send-note-btn">Add to Ledger</button>
+    </div>
   </div>
 
   <script src="./renderer.js"></script>
+
+  <script>
+    // DOM References
+    const roleSelect = document.getElementById('role-select');
+    const patientKeyInput = document.getElementById('patient-key-input');
+    const connectBtn = document.getElementById('connect-btn');
+    const statusDiv = document.getElementById('status');
+    const recordsDiv = document.getElementById('records');
+    const doctorControls = document.getElementById('doctor-controls');
+    const noteInput = document.getElementById('note-input');
+    const sendNoteBtn = document.getElementById('send-note-btn');
+
+    let currentRole = 'doctor';
+
+    // Toggle UI based on role
+    roleSelect.addEventListener('change', (e) => {
+      currentRole = e.target.value;
+      if (currentRole === 'patient') {
+        patientKeyInput.classList.add('visible');
+        patientKeyInput.style.display = 'block';
+      } else {
+        patientKeyInput.classList.remove('visible');
+        patientKeyInput.style.display = 'none';
+      }
+    });
+
+    // Initialize P2P
+    connectBtn.addEventListener('click', () => {
+      const keyString = document.getElementById('connection-key').value;
+      window.p2pAPI?.init?.({ role: currentRole, keyString });
+
+      connectBtn.disabled = true;
+      roleSelect.disabled = true;
+      statusDiv.textContent = 'Initializing secure connection...';
+    });
+
+    // Send Note (Doctor only)
+    sendNoteBtn.addEventListener('click', () => {
+      if (noteInput.value.trim() !== '') {
+        window.p2pAPI?.addNote?.(noteInput.value);
+        noteInput.value = '';
+      }
+    });
+
+    // Listen for Main Process Events
+    window.p2pAPI = window.p2pAPI || {};
+
+    window.p2pAPI.onStatus = window.p2pAPI.onStatus || function(callback) {
+      // Mock implementation for testing
+      window._statusCallback = callback;
+    };
+
+    window.p2pAPI.onRecord = window.p2pAPI.onRecord || function(callback) {
+      // Mock implementation for testing
+      window._recordCallback = callback;
+    };
+
+    window.p2pAPI.onKey = window.p2pAPI.onKey || function(callback) {
+      // Mock implementation for testing
+      window._keyCallback = callback;
+    };
+
+    if (window._statusCallback) {
+      window.p2pAPI.onStatus = function(callback) {
+        window._statusCallback = callback;
+      };
+    }
+
+    // Original event listener override to ensure it works
+    if (window.p2pAPI.onStatus) {
+      window.p2pAPI.onStatus((msg) => {
+        statusDiv.textContent = msg;
+      });
+    }
+
+    if (window.p2pAPI.onRecord) {
+      window.p2pAPI.onRecord((record) => {
+        // Clear empty state on first record
+        if (recordsDiv.querySelector('.empty-state')) {
+          recordsDiv.innerHTML = '';
+        }
+
+        const recordEl = document.createElement('div');
+        recordEl.className = 'record-entry';
+        recordEl.innerHTML = `
+          <div class="timestamp">${record.timestamp}</div>
+          <div><strong>${record.doctor}:</strong> ${record.note}</div>
+        `;
+        recordsDiv.appendChild(recordEl);
+        recordsDiv.scrollTop = recordsDiv.scrollHeight;
+      });
+    }
+
+    if (window.p2pAPI.onKey) {
+      window.p2pAPI.onKey((key) => {
+        if (currentRole === 'doctor') {
+          statusDiv.textContent = `Ledger created. Share this key with patients: ${key}`;
+          doctorControls.classList.add('visible');
+          doctorControls.style.display = 'block';
+        }
+      });
+    }
+  </script>
 </body>
 </html>
