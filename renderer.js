@@ -27,68 +27,68 @@ const doctorListContainer = document.getElementById('doctor-list');
 // Setup default 'all' filter listener
 const allDoctorsFilter = document.querySelector('.doctor-filter[data-doctor="all"]');
 if (allDoctorsFilter) {
-  allDoctorsFilter.addEventListener('click', () => {
-    setFilter('all', allDoctorsFilter);
-  });
+    allDoctorsFilter.addEventListener('click', () => {
+        setFilter('all', allDoctorsFilter);
+    });
 }
 
 function setFilter(doctorName, element) {
-  document.querySelectorAll('.doctor-filter').forEach(el => el.classList.remove('active'));
-  element.classList.add('active');
-  currentFilter = doctorName;
-  renderRecords();
+    document.querySelectorAll('.doctor-filter').forEach(el => el.classList.remove('active'));
+    element.classList.add('active');
+    currentFilter = doctorName;
+    renderRecords();
 }
 
 function addDoctorToSidebar(doctorName) {
-  const div = document.createElement('div');
-  div.className = 'doctor-filter';
-  div.dataset.doctor = doctorName;
-  
-  // Icon
-  const iconSvg = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-teal);"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
-  
-  const formattedName = doctorName.toLowerCase().startsWith('dr.') ? doctorName : `Dr. ${doctorName}`;
-  div.innerHTML = `${iconSvg} ${formattedName}`;
-  
-  div.addEventListener('click', () => {
-    setFilter(doctorName, div);
-  });
-  
-  if (doctorListContainer) {
-    doctorListContainer.appendChild(div);
-  }
+    const div = document.createElement('div');
+    div.className = 'doctor-filter';
+    div.dataset.doctor = doctorName;
+
+    // Icon
+    const iconSvg = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-teal);"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
+
+    const formattedName = doctorName.toLowerCase().startsWith('dr.') ? doctorName : `Dr. ${doctorName}`;
+    div.innerHTML = `${iconSvg} ${formattedName}`;
+
+    div.addEventListener('click', () => {
+        setFilter(doctorName, div);
+    });
+
+    if (doctorListContainer) {
+        doctorListContainer.appendChild(div);
+    }
 }
 
 function renderRecords() {
-  recordsDiv.innerHTML = '';
-  
-  const filteredRecords = currentFilter === 'all' 
-    ? allRecords 
-    : allRecords.filter(r => r.doctor === currentFilter);
+    recordsDiv.innerHTML = '';
 
-  if (filteredRecords.length === 0) {
-    recordsDiv.innerHTML = `
+    const filteredRecords = currentFilter === 'all'
+        ? allRecords
+        : allRecords.filter(r => r.doctor === currentFilter);
+
+    if (filteredRecords.length === 0) {
+        recordsDiv.innerHTML = `
       <div class="record-entry empty-state">
         <div class="timestamp">--</div>
         <div>No records found for this selection.</div>
       </div>
     `;
-    return;
-  }
-  
-  filteredRecords.forEach(record => {
-    const recordEl = document.createElement('div');
-    recordEl.className = 'record-entry';
-    
-    let imgHtml = '';
-    if (record.image) {
-      imgHtml = `<img src="${record.image}" style="max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 4px; margin-top: 12px; cursor: zoom-in; border: 1px solid var(--neutral-border-gray);" onclick="document.getElementById('modal-img').src=this.src; document.getElementById('image-modal').style.display='flex';">`;
+        return;
     }
-    
-    const subjectText = record.subject ? record.subject : 'Medical Note';
-    const doctorName = record.doctor && !record.doctor.toLowerCase().startsWith('dr.') ? `Dr. ${record.doctor}` : (record.doctor || 'Unknown Doctor');
-    
-    recordEl.innerHTML = `
+
+    filteredRecords.forEach(record => {
+        const recordEl = document.createElement('div');
+        recordEl.className = 'record-entry';
+
+        let imgHtml = '';
+        if (record.image) {
+            imgHtml = `<img src="${record.image}" style="max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 4px; margin-top: 12px; cursor: zoom-in; border: 1px solid var(--neutral-border-gray);" onclick="document.getElementById('modal-img').src=this.src; document.getElementById('image-modal').style.display='flex';">`;
+        }
+
+        const subjectText = record.subject ? record.subject : 'Medical Note';
+        const doctorName = record.doctor && !record.doctor.toLowerCase().startsWith('dr.') ? `Dr. ${record.doctor}` : (record.doctor || 'Unknown Doctor');
+
+        recordEl.innerHTML = `
       <div style="border-bottom: 1px solid var(--neutral-border-gray); padding-bottom: 8px; margin-bottom: 12px;">
         <div style="font-size: 16px; font-weight: 700; color: var(--primary-dark-blue); margin-bottom: 4px;">Subject: ${subjectText}</div>
         <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: #666;">
@@ -99,142 +99,157 @@ function renderRecords() {
       <div style="color: var(--primary-dark-blue); line-height: 1.5; white-space: pre-wrap; font-size: 14px;">${record.note}</div>
       ${imgHtml}
     `;
-    recordsDiv.appendChild(recordEl);
-  });
-  
-  recordsDiv.scrollTop = recordsDiv.scrollHeight;
+        recordsDiv.appendChild(recordEl);
+    });
+
+    recordsDiv.scrollTop = recordsDiv.scrollHeight;
 }
 
 // Toggle UI based on role
 roleSelect.addEventListener('change', (e) => {
-  currentRole = e.target.value;
-  const patientKeyInput = document.getElementById('patient-key-input');
-  const doctorNameInput = document.getElementById('doctor-name-input');
-  
-  if (currentRole === 'patient') {
-    if (patientKeyInput) patientKeyInput.style.display = 'block';
-    if (doctorNameInput) doctorNameInput.style.display = 'none';
-  } else {
-    if (patientKeyInput) patientKeyInput.style.display = 'none';
-    if (doctorNameInput) doctorNameInput.style.display = 'block';
-  }
+    currentRole = e.target.value;
+    const patientKeyInput = document.getElementById('patient-key-input');
+    const doctorNameInput = document.getElementById('doctor-name-input');
+
+    if (currentRole === 'patient') {
+        if (patientKeyInput) patientKeyInput.style.display = 'block';
+        if (doctorNameInput) doctorNameInput.style.display = 'none';
+    } else {
+        if (patientKeyInput) patientKeyInput.style.display = 'none';
+        if (doctorNameInput) doctorNameInput.style.display = 'block';
+    }
 });
 
 // Initialize P2P
 connectBtn.addEventListener('click', () => {
-  const doctorNameField = document.getElementById('doctor-name');
-  const patientIdField = document.getElementById('patient-id');
-  const doctorName = doctorNameField ? doctorNameField.value.trim() : '';
-  const patientId = patientIdField ? patientIdField.value.trim() : '';
-  const keyString = document.getElementById('connection-key').value;
-  
-  console.log('Renderer - Doctor Name:', doctorName);
-  console.log('Renderer - Patient ID:', patientId);
-  console.log('Renderer - Current Role:', currentRole);
-  
-  // Validate inputs based on role
-  if (currentRole === 'doctor') {
-    if (!doctorName) {
-      alert('Please enter your name to initialize the connection');
-      return;
-    }
-  } else {
-    if (!patientId) {
-      alert('Please enter your Patient ID to connect');
-      return;
-    }
-  }
-  
-  currentPatientId = patientId;
-  window.p2pAPI.init({ role: currentRole, keyString, doctorName, patientId });
+    const doctorNameField = document.getElementById('doctor-name');
+    const doctorIdField = document.getElementById('doctor-id');
+    const patientIdField = document.getElementById('patient-id');
+    const connectionKeyField = document.getElementById('connection-key');
 
-  connectBtn.disabled = true;
-  roleSelect.disabled = true;
-  statusDiv.textContent = 'Initializing secure connection...';
+    const doctorName = doctorNameField ? doctorNameField.value.trim() : '';
+    // For doctors: their own chosen ID. For patients: the doctor's ID they type in.
+    const doctorId = currentRole === 'doctor'
+        ? (doctorIdField ? doctorIdField.value.trim() : '')
+        : (connectionKeyField ? connectionKeyField.value.trim() : '');
+    const patientId = patientIdField ? patientIdField.value.trim() : '';
+
+    console.log('Renderer - Doctor Name:', doctorName);
+    console.log('Renderer - Doctor ID:', doctorId);
+    console.log('Renderer - Patient ID:', patientId);
+    console.log('Renderer - Current Role:', currentRole);
+
+    // Validate inputs based on role
+    if (currentRole === 'doctor') {
+        if (!doctorName) {
+            alert('Please enter your name to initialize the connection');
+            return;
+        }
+        if (!doctorId) {
+            alert('Please enter a Doctor ID to initialize the connection');
+            return;
+        }
+    } else {
+        if (!patientId) {
+            alert('Please enter your Patient ID to connect');
+            return;
+        }
+        if (!doctorId) {
+            alert("Please enter your doctor's ID to connect");
+            return;
+        }
+    }
+
+    currentPatientId = patientId;
+    window.p2pAPI.init({ role: currentRole, doctorId, doctorName, patientId });
+
+    connectBtn.disabled = true;
+    roleSelect.disabled = true;
+    statusDiv.textContent = 'Initializing secure connection...';
 });
 
 // Image Selection
 if (attachBtn) {
-  attachBtn.addEventListener('click', () => {
-    imageInput.click();
-  });
+    attachBtn.addEventListener('click', () => {
+        imageInput.click();
+    });
 }
 
 if (imageInput) {
-  imageInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        selectedImage = e.target.result;
-        previewImg.src = selectedImage;
-        imagePreview.style.display = 'flex';
-      };
-      reader.readAsDataURL(file);
-    }
-  });
+    imageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                selectedImage = e.target.result;
+                previewImg.src = selectedImage;
+                imagePreview.style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
 }
 
 if (removeImgBtn) {
-  removeImgBtn.addEventListener('click', () => {
-    selectedImage = null;
-    imageInput.value = '';
-    imagePreview.style.display = 'none';
-  });
+    removeImgBtn.addEventListener('click', () => {
+        selectedImage = null;
+        imageInput.value = '';
+        imagePreview.style.display = 'none';
+    });
 }
 
 // Send Note (Doctor only)
 sendNoteBtn.addEventListener('click', () => {
-  const subjectInput = document.getElementById('subject-input');
-  const subject = subjectInput ? subjectInput.value.trim() : '';
-  const text = noteInput.value.trim();
-  const patientIdField = document.getElementById('add-note-patient-id');
-  const patientIdForNote = patientIdField ? patientIdField.value.trim() : '';
-  
-  if (!patientIdForNote) {
-    alert('Please enter the patient ID for this note');
-    return;
-  }
-  
-  if (text !== '' || subject !== '' || selectedImage) {
-    window.p2pAPI.addNote({ patientId: patientIdForNote, subject: subject, text: text, image: selectedImage });
-    if (subjectInput) subjectInput.value = '';
-    if (patientIdField) patientIdField.value = '';
-    noteInput.value = '';
-    selectedImage = null;
-    if (imageInput) imageInput.value = '';
-    if (imagePreview) imagePreview.style.display = 'none';
-  }
+    const subjectInput = document.getElementById('subject-input');
+    const subject = subjectInput ? subjectInput.value.trim() : '';
+    const text = noteInput.value.trim();
+    const patientIdField = document.getElementById('add-note-patient-id');
+    const patientIdForNote = patientIdField ? patientIdField.value.trim() : '';
+
+    if (!patientIdForNote) {
+        alert('Please enter the patient ID for this note');
+        return;
+    }
+
+    if (text !== '' || subject !== '' || selectedImage) {
+        window.p2pAPI.addNote({ patientId: patientIdForNote, subject: subject, text: text, image: selectedImage });
+        if (subjectInput) subjectInput.value = '';
+        if (patientIdField) patientIdField.value = '';
+        noteInput.value = '';
+        selectedImage = null;
+        if (imageInput) imageInput.value = '';
+        if (imagePreview) imagePreview.style.display = 'none';
+    }
 });
 
 // Listen for Main Process Events
 window.p2pAPI.onStatus((msg) => {
-  statusDiv.textContent = msg;
+    statusDiv.textContent = msg;
 });
 
 window.p2pAPI.onRecord((record) => {
-  allRecords.push(record);
-  
-  // Only add doctor to sidebar if the record is visible to this user
-  // (For patients, only their own records should be received by the backend)
-  if (record.doctor && !knownDoctors.has(record.doctor)) {
-    knownDoctors.add(record.doctor);
-    addDoctorToSidebar(record.doctor);
-  }
-  
-  renderRecords();
+    allRecords.push(record);
+
+    // Only add doctor to sidebar if the record is visible to this user
+    // (For patients, only their own records should be received by the backend)
+    if (record.doctor && !knownDoctors.has(record.doctor)) {
+        knownDoctors.add(record.doctor);
+        addDoctorToSidebar(record.doctor);
+    }
+
+    renderRecords();
 });
 
-// Handle P2P key (for doctor role)
-window.p2pAPI.onKey((key) => {
-  if (currentRole === 'doctor') {
-    statusDiv.textContent = `Ledger created. Share this key with patients: ${key}`;
-    doctorControls.style.display = 'block';
-  }
+// Handle confirmation from main process that the ledger is ready (doctor only)
+window.p2pAPI.onKey((doctorId) => {
+    if (currentRole === 'doctor') {
+        statusDiv.textContent = `Ledger ready. Share your Doctor ID with patients: ${doctorId}`;
+        doctorControls.style.display = 'block';
+    }
 });
 
 if (downloadPdfBtn) {
-  downloadPdfBtn.addEventListener('click', () => {
-    window.p2pAPI.downloadPDF();
-  });
+    downloadPdfBtn.addEventListener('click', () => {
+        window.p2pAPI.downloadPDF();
+    });
 }

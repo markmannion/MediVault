@@ -575,19 +575,22 @@
                         </select>
                     </div>
 
-                    <!-- DOCTOR NAME INPUT -->
+                    <!-- DOCTOR FIELDS -->
                     <div id="doctor-name-input">
-                        <label for="doctor-name">Doctor's Name</label>
+                        <label for="doctor-name">Your Name</label>
                         <input type="text" id="doctor-name" placeholder="Enter your full name">
+
+                        <label for="doctor-id">Your Doctor ID</label>
+                        <input type="text" id="doctor-id" placeholder="Choose a unique ID (e.g. dr-smith-cardiology)">
                     </div>
 
-                    <!-- PATIENT KEY INPUT -->
+                    <!-- PATIENT FIELDS (Patient ID + Doctor ID) -->
                     <div id="patient-key-input">
                         <label for="patient-id">Your Patient ID</label>
                         <input type="text" id="patient-id" placeholder="Enter your patient ID">
 
-                        <label for="connection-key">Doctor's Public Key</label>
-                        <input type="text" id="connection-key" placeholder="Paste the doctor's public key here">
+                        <label for="connection-key">Doctor's ID</label>
+                        <input type="text" id="connection-key" placeholder="Enter your doctor's ID">
                     </div>
 
                     <button id="connect-btn">Initialize Secure Connection</button>
