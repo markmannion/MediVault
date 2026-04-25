@@ -145,3 +145,4 @@ vite.config.ts.timestamp-*
 doctor-data/
 patient-data/
 data
+.DS_Store
