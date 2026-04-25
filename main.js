@@ -10,6 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 let mainWindow
 let core
 let swarm
+let doctorName = null
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -28,8 +29,24 @@ function createWindow() {
 app.whenReady().then(createWindow)
 
 // Handle initialization from the UI
-ipcMain.on('init-p2p', async (event, { role, keyString }) => {
+ipcMain.on('init-p2p', async (event, data) => {
+  console.log('Backend - Received data:', JSON.stringify(data))
+  
+  const { role, keyString, doctorName: name } = data
   const isDoctor = role === 'doctor'
+  
+  console.log('Backend - Parsed values:', { role, name, isDoctor })
+  
+  // For doctors, name is mandatory
+  if (isDoctor) {
+    if (!name || !name.trim()) {
+      console.log('Backend - Name validation failed. Name:', name, 'Type:', typeof name)
+      mainWindow.webContents.send('p2p-status', 'Error: Doctor name is required')
+      return
+    }
+    doctorName = name.trim()
+    console.log('Backend - Doctor name set to:', doctorName)
+  }
   
   // Initialize Hypercore
   core = new Hypercore(
@@ -42,7 +59,7 @@ ipcMain.on('init-p2p', async (event, { role, keyString }) => {
 
   if (isDoctor) {
     const doctorKey = b4a.toString(core.key, 'hex')
-    mainWindow.webContents.send('p2p-status', `Doctor Core Created. Share this key:\n${doctorKey}`)
+    mainWindow.webContents.send('p2p-status', `Doctor Core Created (${doctorName}). Share this key:\n${doctorKey}`)
     mainWindow.webContents.send('p2p-key', doctorKey)
   } else {
     mainWindow.webContents.send('p2p-status', 'Connecting to DHT and searching for Doctor...')
@@ -71,11 +88,11 @@ ipcMain.on('init-p2p', async (event, { role, keyString }) => {
 
 // Handle new notes from the Doctor's UI
 ipcMain.on('add-note', async (event, noteData) => {
-  if (core) {
+  if (core && doctorName) {
     const isString = typeof noteData === 'string'
     const record = {
       timestamp: new Date().toLocaleTimeString(),
-      doctor: 'Dr. Smith',
+      doctor: doctorName,
       note: isString ? noteData : noteData.text,
       image: isString ? null : noteData.image
     }

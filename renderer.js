@@ -18,16 +18,37 @@ let selectedImage = null;
 // Toggle UI based on role
 roleSelect.addEventListener('change', (e) => {
   currentRole = e.target.value;
-  patientKeyInput.style.display = currentRole === 'patient' ? 'block' : 'none';
+  const patientKeyInput = document.getElementById('patient-key-input');
+  const doctorNameInput = document.getElementById('doctor-name-input');
+  
+  if (currentRole === 'patient') {
+    if (patientKeyInput) patientKeyInput.style.display = 'block';
+    if (doctorNameInput) doctorNameInput.style.display = 'none';
+  } else {
+    if (patientKeyInput) patientKeyInput.style.display = 'none';
+    if (doctorNameInput) doctorNameInput.style.display = 'block';
+  }
 });
 
 // Initialize P2P
 connectBtn.addEventListener('click', () => {
+  const doctorNameField = document.getElementById('doctor-name');
+  const doctorName = doctorNameField ? doctorNameField.value.trim() : '';
   const keyString = document.getElementById('connection-key').value;
-  window.p2pAPI.init({ role: currentRole, keyString });
+  
+  console.log('Renderer - Doctor Name:', doctorName);
+  console.log('Renderer - Current Role:', currentRole);
+  
+  // Validate doctor name if role is doctor
+  if (currentRole === 'doctor' && !doctorName) {
+    alert('Please enter your name to initialize the connection');
+    return;
+  }
+  
+  window.p2pAPI.init({ role: currentRole, keyString, doctorName });
 
   connectBtn.disabled = true;
-  roleSelect.disabled = true;
+  currentRole = 'doctor';
   statusDiv.textContent = 'Initializing secure connection...';
 });
 
