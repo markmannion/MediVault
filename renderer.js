@@ -12,9 +12,96 @@ const imagePreview = document.getElementById('image-preview');
 const previewImg = document.getElementById('preview-img');
 const removeImgBtn = document.getElementById('remove-img-btn');
 const subjectInput = document.getElementById('subject-input');
+const downloadPdfBtn = document.getElementById('download-pdf-btn');
 
 let currentRole = 'doctor';
 let selectedImage = null;
+
+let allRecords = [];
+let currentFilter = 'all';
+const knownDoctors = new Set();
+const doctorListContainer = document.getElementById('doctor-list');
+
+// Setup default 'all' filter listener
+const allDoctorsFilter = document.querySelector('.doctor-filter[data-doctor="all"]');
+if (allDoctorsFilter) {
+  allDoctorsFilter.addEventListener('click', () => {
+    setFilter('all', allDoctorsFilter);
+  });
+}
+
+function setFilter(doctorName, element) {
+  document.querySelectorAll('.doctor-filter').forEach(el => el.classList.remove('active'));
+  element.classList.add('active');
+  currentFilter = doctorName;
+  renderRecords();
+}
+
+function addDoctorToSidebar(doctorName) {
+  const div = document.createElement('div');
+  div.className = 'doctor-filter';
+  div.dataset.doctor = doctorName;
+  
+  // Icon
+  const iconSvg = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-teal);"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
+  
+  const formattedName = doctorName.toLowerCase().startsWith('dr.') ? doctorName : `Dr. ${doctorName}`;
+  div.innerHTML = `${iconSvg} ${formattedName}`;
+  
+  div.addEventListener('click', () => {
+    setFilter(doctorName, div);
+  });
+  
+  if (doctorListContainer) {
+    doctorListContainer.appendChild(div);
+  }
+}
+
+function renderRecords() {
+  recordsDiv.innerHTML = '';
+  
+  const filteredRecords = currentFilter === 'all' 
+    ? allRecords 
+    : allRecords.filter(r => r.doctor === currentFilter);
+
+  if (filteredRecords.length === 0) {
+    recordsDiv.innerHTML = `
+      <div class="record-entry empty-state">
+        <div class="timestamp">--</div>
+        <div>No records found for this selection.</div>
+      </div>
+    `;
+    return;
+  }
+  
+  filteredRecords.forEach(record => {
+    const recordEl = document.createElement('div');
+    recordEl.className = 'record-entry';
+    
+    let imgHtml = '';
+    if (record.image) {
+      imgHtml = `<img src="${record.image}" style="max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 4px; margin-top: 12px; cursor: zoom-in; border: 1px solid var(--neutral-border-gray);" onclick="document.getElementById('modal-img').src=this.src; document.getElementById('image-modal').style.display='flex';">`;
+    }
+    
+    const subjectText = record.subject ? record.subject : 'Medical Note';
+    const doctorName = record.doctor && !record.doctor.toLowerCase().startsWith('dr.') ? `Dr. ${record.doctor}` : (record.doctor || 'Unknown Doctor');
+    
+    recordEl.innerHTML = `
+      <div style="border-bottom: 1px solid var(--neutral-border-gray); padding-bottom: 8px; margin-bottom: 12px;">
+        <div style="font-size: 16px; font-weight: 700; color: var(--primary-dark-blue); margin-bottom: 4px;">Subject: ${subjectText}</div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: #666;">
+          <div><strong>From:</strong> <span style="color: var(--accent-teal); font-weight: 500;">${doctorName}</span></div>
+          <div class="timestamp">${record.timestamp}</div>
+        </div>
+      </div>
+      <div style="color: var(--primary-dark-blue); line-height: 1.5; white-space: pre-wrap; font-size: 14px;">${record.note}</div>
+      ${imgHtml}
+    `;
+    recordsDiv.appendChild(recordEl);
+  });
+  
+  recordsDiv.scrollTop = recordsDiv.scrollHeight;
+}
 
 // Toggle UI based on role
 roleSelect.addEventListener('change', (e) => {
@@ -103,36 +190,14 @@ window.p2pAPI.onStatus((msg) => {
 });
 
 window.p2pAPI.onRecord((record) => {
-  // Clear empty state on first record
-  const emptyState = recordsDiv.querySelector('.empty-state');
-  if (emptyState) {
-    emptyState.remove();
-  }
-
-  const recordEl = document.createElement('div');
-  recordEl.className = 'record-entry';
+  allRecords.push(record);
   
-  let imgHtml = '';
-  if (record.image) {
-    imgHtml = `<img src="${record.image}" style="max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 4px; margin-top: 12px; cursor: zoom-in; border: 1px solid var(--neutral-border-gray);" onclick="document.getElementById('modal-img').src=this.src; document.getElementById('image-modal').style.display='flex';">`;
+  if (record.doctor && !knownDoctors.has(record.doctor)) {
+    knownDoctors.add(record.doctor);
+    addDoctorToSidebar(record.doctor);
   }
   
-  const subjectText = record.subject ? record.subject : 'Medical Note';
-  const doctorName = record.doctor && !record.doctor.toLowerCase().startsWith('dr.') ? `Dr. ${record.doctor}` : (record.doctor || 'Unknown Doctor');
-  
-  recordEl.innerHTML = `
-    <div style="border-bottom: 1px solid var(--neutral-border-gray); padding-bottom: 8px; margin-bottom: 12px;">
-      <div style="font-size: 16px; font-weight: 700; color: var(--primary-dark-blue); margin-bottom: 4px;">Subject: ${subjectText}</div>
-      <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: #666;">
-        <div><strong>From:</strong> <span style="color: var(--accent-teal); font-weight: 500;">${doctorName}</span></div>
-        <div class="timestamp">${record.timestamp}</div>
-      </div>
-    </div>
-    <div style="color: var(--primary-dark-blue); line-height: 1.5; white-space: pre-wrap; font-size: 14px;">${record.note}</div>
-    ${imgHtml}
-  `;
-  recordsDiv.appendChild(recordEl);
-  recordsDiv.scrollTop = recordsDiv.scrollHeight;
+  renderRecords();
 });
 
 // Handle P2P key (for doctor role)
@@ -142,3 +207,9 @@ window.p2pAPI.onKey((key) => {
     doctorControls.style.display = 'block';
   }
 });
+
+if (downloadPdfBtn) {
+  downloadPdfBtn.addEventListener('click', () => {
+    window.p2pAPI.downloadPDF();
+  });
+}

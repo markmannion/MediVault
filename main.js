@@ -1,9 +1,10 @@
-import { app, BrowserWindow, ipcMain, Menu } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, dialog } from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import Hypercore from 'hypercore'
 import Hyperswarm from 'hyperswarm'
 import b4a from 'b4a'
+import fs from 'fs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -98,5 +99,27 @@ ipcMain.on('add-note', async (event, noteData) => {
       image: isString ? null : noteData.image
     }
     await core.append(record)
+  }
+})
+
+// Handle PDF download
+ipcMain.on('download-pdf', async (event) => {
+  try {
+    const pdfPath = await dialog.showSaveDialog({
+      title: 'Save Medical Records Ledger',
+      defaultPath: 'Medical_Records_Ledger.pdf',
+      filters: [{ name: 'PDFs', extensions: ['pdf'] }]
+    })
+    
+    if (pdfPath.canceled) return
+    
+    const data = await mainWindow.webContents.printToPDF({
+      printBackground: true,
+      margins: { marginType: 'printableArea' }
+    })
+    
+    fs.writeFileSync(pdfPath.filePath, data)
+  } catch (error) {
+    console.error('Failed to generate PDF:', error)
   }
 })

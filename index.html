@@ -42,8 +42,47 @@
     }
 
     .container {
-      max-width: 800px;
+      max-width: 1000px;
       margin: 0 auto;
+    }
+
+    .layout-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .doctor-filter {
+      padding: 12px 15px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      margin-bottom: 8px;
+      background: var(--neutral-light-gray);
+      border-left: 4px solid transparent;
+      transition: var(--transition);
+      font-size: 14px;
+      color: var(--primary-dark-blue);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .doctor-filter:hover {
+      background: #e9ecef;
+      border-left-color: #adb5bd;
+    }
+
+    .doctor-filter.active {
+      background: var(--light-off-white);
+      border-left-color: var(--accent-teal);
+      font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+      .layout-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     /* ========== HEADER ========== */
@@ -431,6 +470,67 @@
       display: block;
       margin-bottom: 5px;
     }
+
+    /* ========== PRINT STYLES ========== */
+    @media print {
+      body {
+        background: white;
+        color: black;
+      }
+
+      /* Hide all elements by default */
+      body>*:not(.container) {
+        display: none !important;
+      }
+
+      .container>*:not(.layout-grid) {
+        display: none !important;
+      }
+
+      .layout-grid>*:not(.main-column) {
+        display: none !important;
+      }
+
+      .main-column>*:not(#ledger-card) {
+        display: none !important;
+      }
+
+      #ledger-card>*:not(#records) {
+        display: none !important;
+      }
+
+      /* Reset the layout properties of ancestors so they don't add margins/paddings */
+      .container,
+      .layout-grid,
+      .main-column,
+      #ledger-card,
+      #records {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        height: auto !important;
+        overflow: visible !important;
+        background: transparent !important;
+      }
+
+      /* Style the individual messages for print */
+      .record-entry {
+        page-break-inside: avoid;
+        border: none !important;
+        border-bottom: 1px solid #ccc !important;
+        margin-bottom: 20px !important;
+        padding: 0 0 20px 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+
+      .record-entry:last-child {
+        border-bottom: none !important;
+      }
+    }
   </style>
 </head>
 
@@ -444,82 +544,109 @@
     </div>
 
     <!-- ROLE SELECTION CARD -->
-    <div class="card">
-      <h2>Setup Connection</h2>
-
-      <div class="role-section">
-        <label for="role-select">Select Your Role</label>
-        <select id="role-select">
-          <option value="doctor">Doctor (Create Ledger)</option>
-          <option value="patient">Patient (Join Swarm)</option>
-        </select>
-      </div>
-
-      <!-- DOCTOR NAME INPUT -->
-      <div id="doctor-name-input">
-        <label for="doctor-name">Doctor's Name</label>
-        <input type="text" id="doctor-name" placeholder="Enter your full name">
-      </div>
-
-      <!-- PATIENT KEY INPUT -->
-      <div id="patient-key-input">
-        <label for="connection-key">Doctor's Public Key</label>
-        <input type="text" id="connection-key" placeholder="Paste the doctor's public key here">
-      </div>
-
-      <button id="connect-btn">Initialize Secure Connection</button>
-    </div>
-
-    <!-- CONNECTION STATUS CARD -->
-    <div class="card">
-      <h3>Connection Status</h3>
-      <div id="status">Waiting for initialization...</div>
-    </div>
-
-    <!-- MEDICAL RECORDS LEDGER CARD -->
-    <div class="card">
-      <h3>Medical Records Ledger</h3>
-      <div id="records">
-        <div class="record-entry empty-state">
-          <div class="timestamp">--</div>
-          <div>No records yet. Connect to sync medical data.</div>
+    <div class="layout-grid">
+      <!-- SIDEBAR -->
+      <div class="sidebar card">
+        <h3 style="margin-bottom: 15px;">My Care Team</h3>
+        <div id="doctor-list">
+          <div class="doctor-filter active" data-doctor="all">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-teal);">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            All Doctors
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- DOCTOR CONTROLS CARD -->
-    <div class="card" id="doctor-controls">
-      <h3>Add Medical Note</h3>
+      <div class="main-column">
+        <div class="card">
+          <h2>Setup Connection</h2>
 
-      <label for="subject-input"
-        style="font-size: 13px; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Subject</label>
-      <input type="text" id="subject-input" placeholder="Enter subject (e.g., Routine Checkup, Prescription)..."
-        style="margin-top: 0; margin-bottom: 15px;">
+          <div class="role-section">
+            <label for="role-select">Select Your Role</label>
+            <select id="role-select">
+              <option value="doctor">Doctor (Create Ledger)</option>
+              <option value="patient">Patient (Join Swarm)</option>
+            </select>
+          </div>
 
-      <label for="note-input"
-        style="font-size: 13px; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Body</label>
-      <div style="position: relative;">
-        <textarea id="note-input" placeholder="Enter medical note details..."
-          style="width: 100%; padding: 12px 14px; margin: 0 0 10px 0; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 14px; resize: vertical; min-height: 120px; color: #22577A; padding-right: 40px;"></textarea>
-        <button id="attach-btn" title="Attach Image"
-          style="position: absolute; right: 10px; bottom: 20px; width: auto; padding: 5px; margin: 0; background: none; border: none; cursor: pointer; color: #38A3A5; box-shadow: none;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path
-              d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48">
-            </path>
-          </svg>
-        </button>
-      </div>
-      <input type="file" id="image-input" accept="image/*" style="display: none;">
-      <div id="image-preview" style="display: none; margin-bottom: 10px; align-items: center; gap: 10px;">
-        <img id="preview-img" src=""
-          style="max-width: 100px; max-height: 100px; border-radius: 4px; border: 1px solid #ccc;">
-        <button id="remove-img-btn"
-          style="width: auto; padding: 6px 12px; margin: 0; background: #e74c3c; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Remove</button>
-      </div>
-      <button id="send-note-btn">Add to Ledger</button>
-    </div>
+          <!-- DOCTOR NAME INPUT -->
+          <div id="doctor-name-input">
+            <label for="doctor-name">Doctor's Name</label>
+            <input type="text" id="doctor-name" placeholder="Enter your full name">
+          </div>
+
+          <!-- PATIENT KEY INPUT -->
+          <div id="patient-key-input">
+            <label for="connection-key">Doctor's Public Key</label>
+            <input type="text" id="connection-key" placeholder="Paste the doctor's public key here">
+          </div>
+
+          <button id="connect-btn">Initialize Secure Connection</button>
+        </div>
+
+        <!-- CONNECTION STATUS CARD -->
+        <div class="card">
+          <h3>Connection Status</h3>
+          <div id="status">Waiting for initialization...</div>
+        </div>
+
+        <!-- MEDICAL RECORDS LEDGER CARD -->
+        <div class="card" id="ledger-card">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--neutral-border-gray); padding-bottom: 12px;">
+            <h3 style="margin: 0; padding: 0; border: none;">Medical Records Ledger</h3>
+            <button id="download-pdf-btn"
+              style="width: auto; margin: 0; padding: 8px 12px; background: var(--primary-dark-blue); color: white; font-size: 13px;">Download
+              PDF</button>
+          </div>
+          <div id="records">
+            <div class="record-entry empty-state">
+              <div class="timestamp">--</div>
+              <div>No records yet. Connect to sync medical data.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DOCTOR CONTROLS CARD -->
+        <div class="card" id="doctor-controls">
+          <h3>Add Medical Note</h3>
+
+          <label for="subject-input"
+            style="font-size: 13px; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Subject</label>
+          <input type="text" id="subject-input" placeholder="Enter subject (e.g., Routine Checkup, Prescription)..."
+            style="margin-top: 0; margin-bottom: 15px;">
+
+          <label for="note-input"
+            style="font-size: 13px; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Body</label>
+          <div style="position: relative;">
+            <textarea id="note-input" placeholder="Enter medical note details..."
+              style="width: 100%; padding: 12px 14px; margin: 0 0 10px 0; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 14px; resize: vertical; min-height: 120px; color: #22577A; padding-right: 40px;"></textarea>
+            <button id="attach-btn" title="Attach Image"
+              style="position: absolute; right: 10px; bottom: 20px; width: auto; padding: 5px; margin: 0; background: none; border: none; cursor: pointer; color: #38A3A5; box-shadow: none;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48">
+                </path>
+              </svg>
+            </button>
+          </div>
+          <input type="file" id="image-input" accept="image/*" style="display: none;">
+          <div id="image-preview" style="display: none; margin-bottom: 10px; align-items: center; gap: 10px;">
+            <img id="preview-img" src=""
+              style="max-width: 100px; max-height: 100px; border-radius: 4px; border: 1px solid #ccc;">
+            <button id="remove-img-btn"
+              style="width: auto; padding: 6px 12px; margin: 0; background: #e74c3c; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Remove</button>
+          </div>
+          <button id="send-note-btn">Add to Ledger</button>
+        </div>
+      </div> <!-- END MAIN COLUMN -->
+    </div> <!-- END LAYOUT GRID -->
   </div>
 
   <script src="./renderer.js"></script>
