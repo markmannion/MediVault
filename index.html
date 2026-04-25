@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,7 +28,8 @@
       box-sizing: border-box;
     }
 
-    html, body {
+    html,
+    body {
       height: 100%;
     }
 
@@ -104,7 +106,8 @@
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
     }
 
-    .card h2, .card h3 {
+    .card h2,
+    .card h3 {
       font-size: 16px;
       font-weight: 600;
       color: var(--primary-dark-blue);
@@ -121,7 +124,9 @@
     }
 
     /* ========== FORM ELEMENTS ========== */
-    select, input[type="text"], input[type="password"] {
+    select,
+    input[type="text"],
+    input[type="password"] {
       width: 100%;
       padding: 12px 14px;
       margin: 10px 0;
@@ -134,13 +139,17 @@
       transition: var(--transition);
     }
 
-    select:focus, input[type="text"]:focus, input[type="password"]:focus {
+    select:focus,
+    input[type="text"]:focus,
+    input[type="password"]:focus {
       border-color: var(--accent-teal);
       outline: none;
       box-shadow: 0 0 0 3px rgba(56, 163, 165, 0.1);
     }
 
-    select::placeholder, input[type="text"]::placeholder, input[type="password"]::placeholder {
+    select::placeholder,
+    input[type="text"]::placeholder,
+    input[type="password"]::placeholder {
       color: #999;
     }
 
@@ -259,6 +268,7 @@
         opacity: 0;
         transform: translateY(-10px);
       }
+
       to {
         opacity: 1;
         transform: translateY(0);
@@ -306,19 +316,20 @@
     }
 
     .record-entry {
-      padding: 12px 0;
-      border-bottom: 1px solid var(--neutral-border-gray);
+      padding: 16px;
+      margin-bottom: 16px;
+      background: #fcfcfc;
+      border: 1px solid var(--neutral-border-gray);
+      border-left: 4px solid var(--accent-teal);
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
       display: flex;
       flex-direction: column;
       gap: 4px;
     }
 
     .record-entry:last-child {
-      border-bottom: none;
-    }
-
-    .record-entry:first-child {
-      padding-top: 0;
+      margin-bottom: 0;
     }
 
     .timestamp {
@@ -329,7 +340,7 @@
       letter-spacing: 0.3px;
     }
 
-    .record-entry > div:not(.timestamp) {
+    .record-entry>div:not(.timestamp) {
       color: var(--primary-dark-blue);
       font-size: 14px;
       line-height: 1.5;
@@ -396,7 +407,9 @@
         font-size: 24px;
       }
 
-      input, select, button {
+      input,
+      select,
+      button {
         padding: 11px 12px;
         font-size: 14px;
       }
@@ -407,7 +420,9 @@
     }
 
     /* ========== ACCESSIBILITY ========== */
-    button:focus-visible, select:focus-visible, input:focus-visible {
+    button:focus-visible,
+    select:focus-visible,
+    input:focus-visible {
       outline: 2px solid var(--accent-teal);
       outline-offset: 2px;
     }
@@ -418,16 +433,12 @@
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <!-- HEADER WITH LOGO -->
     <div class="header">
-      <img 
-        src="./mv_logo.png" 
-        alt="Medi Vault" 
-        class="header-logo"
-        title="Medi Vault - Secure Medical Records"
-      >
+      <img src="./mv_logo.png" alt="Medi Vault" class="header-logo" title="Medi Vault - Secure Medical Records">
       <p class="header-subtitle">Secure peer-to-peer medical record synchronization</p>
       <div class="header-divider"></div>
     </div>
@@ -447,21 +458,13 @@
       <!-- DOCTOR NAME INPUT -->
       <div id="doctor-name-input">
         <label for="doctor-name">Doctor's Name</label>
-        <input
-          type="text"
-          id="doctor-name"
-          placeholder="Enter your full name"
-        >
+        <input type="text" id="doctor-name" placeholder="Enter your full name">
       </div>
 
       <!-- PATIENT KEY INPUT -->
       <div id="patient-key-input">
         <label for="connection-key">Doctor's Public Key</label>
-        <input
-          type="text"
-          id="connection-key"
-          placeholder="Paste the doctor's public key here"
-        >
+        <input type="text" id="connection-key" placeholder="Paste the doctor's public key here">
       </div>
 
       <button id="connect-btn">Initialize Secure Connection</button>
@@ -487,23 +490,33 @@
     <!-- DOCTOR CONTROLS CARD -->
     <div class="card" id="doctor-controls">
       <h3>Add Medical Note</h3>
-      <label for="note-input" style="font-size: 13px; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Medical Note</label>
+
+      <label for="subject-input"
+        style="font-size: 13px; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Subject</label>
+      <input type="text" id="subject-input" placeholder="Enter subject (e.g., Routine Checkup, Prescription)..."
+        style="margin-top: 0; margin-bottom: 15px;">
+
+      <label for="note-input"
+        style="font-size: 13px; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Body</label>
       <div style="position: relative;">
-        <textarea
-          id="note-input"
-          placeholder="Enter medical note (e.g., patient observations, prescriptions)..."
-          style="width: 100%; padding: 12px 14px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 14px; resize: vertical; min-height: 80px; color: #22577A; padding-right: 40px;"
-        ></textarea>
-        <button id="attach-btn" title="Attach Image" style="position: absolute; right: 10px; bottom: 20px; width: auto; padding: 5px; margin: 0; background: none; border: none; cursor: pointer; color: #38A3A5; box-shadow: none;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+        <textarea id="note-input" placeholder="Enter medical note details..."
+          style="width: 100%; padding: 12px 14px; margin: 0 0 10px 0; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 14px; resize: vertical; min-height: 120px; color: #22577A; padding-right: 40px;"></textarea>
+        <button id="attach-btn" title="Attach Image"
+          style="position: absolute; right: 10px; bottom: 20px; width: auto; padding: 5px; margin: 0; background: none; border: none; cursor: pointer; color: #38A3A5; box-shadow: none;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48">
+            </path>
           </svg>
         </button>
       </div>
       <input type="file" id="image-input" accept="image/*" style="display: none;">
       <div id="image-preview" style="display: none; margin-bottom: 10px; align-items: center; gap: 10px;">
-        <img id="preview-img" src="" style="max-width: 100px; max-height: 100px; border-radius: 4px; border: 1px solid #ccc;">
-        <button id="remove-img-btn" style="width: auto; padding: 6px 12px; margin: 0; background: #e74c3c; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Remove</button>
+        <img id="preview-img" src=""
+          style="max-width: 100px; max-height: 100px; border-radius: 4px; border: 1px solid #ccc;">
+        <button id="remove-img-btn"
+          style="width: auto; padding: 6px 12px; margin: 0; background: #e74c3c; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Remove</button>
       </div>
       <button id="send-note-btn">Add to Ledger</button>
     </div>
@@ -511,167 +524,13 @@
 
   <script src="./renderer.js"></script>
 
-  <script>
-    // DOM References
-    const roleSelect = document.getElementById('role-select');
-    const doctorNameInput = document.getElementById('doctor-name-input');
-    const doctorNameField = document.getElementById('doctor-name');
-    const patientKeyInput = document.getElementById('patient-key-input');
-    const connectBtn = document.getElementById('connect-btn');
-    const statusDiv = document.getElementById('status');
-    const recordsDiv = document.getElementById('records');
-    const doctorControls = document.getElementById('doctor-controls');
-    const noteInput = document.getElementById('note-input');
-    const sendNoteBtn = document.getElementById('send-note-btn');
-    const attachBtn = document.getElementById('attach-btn');
-    const imageInput = document.getElementById('image-input');
-    const imagePreview = document.getElementById('image-preview');
-    const previewImg = document.getElementById('preview-img');
-    const removeImgBtn = document.getElementById('remove-img-btn');
-
-    let currentRole = 'doctor';
-    let selectedImage = null;
-
-    // Toggle UI based on role
-    roleSelect.addEventListener('change', (e) => {
-      currentRole = e.target.value;
-      if (currentRole === 'patient') {
-        patientKeyInput.classList.add('visible');
-        patientKeyInput.style.display = 'block';
-        doctorNameInput.classList.add('hidden');
-      } else {
-        patientKeyInput.classList.remove('visible');
-        patientKeyInput.style.display = 'none';
-        doctorNameInput.classList.remove('hidden');
-      }
-    });
-
-    // Initialize P2P
-    connectBtn.addEventListener('click', () => {
-      const doctorName = doctorNameField.value.trim();
-      const keyString = document.getElementById('connection-key').value;
-      
-      console.log('Debug - Doctor Name:', doctorName);
-      console.log('Debug - Current Role:', currentRole);
-      
-      // Validate doctor name if role is doctor
-      if (currentRole === 'doctor' && !doctorName) {
-        alert('Please enter your name to initialize the connection');
-        return;
-      }
-      
-      window.p2pAPI?.init?.({ role: currentRole, keyString, doctorName });
-
-      connectBtn.disabled = true;
-      roleSelect.disabled = true;
-      statusDiv.textContent = 'Initializing secure connection...';
-    });
-
-    // Image Selection
-    if (attachBtn) {
-      attachBtn.addEventListener('click', () => {
-        imageInput.click();
-      });
-    }
-
-    if (imageInput) {
-      imageInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            selectedImage = e.target.result;
-            previewImg.src = selectedImage;
-            imagePreview.style.display = 'flex';
-          };
-          reader.readAsDataURL(file);
-        }
-      });
-    }
-
-    if (removeImgBtn) {
-      removeImgBtn.addEventListener('click', () => {
-        selectedImage = null;
-        imageInput.value = '';
-        imagePreview.style.display = 'none';
-      });
-    }
-
-    // Send Note (Doctor only)
-    sendNoteBtn.addEventListener('click', () => {
-      const text = noteInput.value.trim();
-      if (text !== '' || selectedImage) {
-        window.p2pAPI?.addNote?.({ text: text, image: selectedImage });
-        noteInput.value = '';
-        selectedImage = null;
-        if (imageInput) imageInput.value = '';
-        if (imagePreview) imagePreview.style.display = 'none';
-      }
-    });
-
-    // Listen for Main Process Events
-    window.p2pAPI = window.p2pAPI || {};
-
-    window.p2pAPI.onStatus = window.p2pAPI.onStatus || function(callback) {
-      // Mock implementation for testing
-      window._statusCallback = callback;
-    };
-
-    window.p2pAPI.onRecord = window.p2pAPI.onRecord || function(callback) {
-      // Mock implementation for testing
-      window._recordCallback = callback;
-    };
-
-    window.p2pAPI.onKey = window.p2pAPI.onKey || function(callback) {
-      // Mock implementation for testing
-      window._keyCallback = callback;
-    };
-
-    if (window._statusCallback) {
-      window.p2pAPI.onStatus = function(callback) {
-        window._statusCallback = callback;
-      };
-    }
-
-    // Original event listener override to ensure it works
-    if (window.p2pAPI.onStatus) {
-      window.p2pAPI.onStatus((msg) => {
-        statusDiv.textContent = msg;
-      });
-    }
-
-    if (window.p2pAPI.onRecord) {
-      window.p2pAPI.onRecord((record) => {
-        // Clear empty state on first record
-        if (recordsDiv.querySelector('.empty-state')) {
-          recordsDiv.innerHTML = '';
-        }
-
-        const recordEl = document.createElement('div');
-        recordEl.className = 'record-entry';
-        let imgHtml = '';
-        if (record.image) {
-          imgHtml = `<img src="${record.image}" style="max-width: 100%; max-height: 200px; border-radius: 4px; margin-top: 8px;">`;
-        }
-        recordEl.innerHTML = `
-          <div class="timestamp">${record.timestamp}</div>
-          <div><strong>${record.doctor}:</strong> ${record.note}</div>
-          ${imgHtml}
-        `;
-        recordsDiv.appendChild(recordEl);
-        recordsDiv.scrollTop = recordsDiv.scrollHeight;
-      });
-    }
-
-    if (window.p2pAPI.onKey) {
-      window.p2pAPI.onKey((key) => {
-        if (currentRole === 'doctor') {
-          statusDiv.textContent = `Ledger created. Share this key with patients: ${key}`;
-          doctorControls.classList.add('visible');
-          doctorControls.style.display = 'block';
-        }
-      });
-    }
-  </script>
+  <!-- Image Zoom Modal -->
+  <div id="image-modal"
+    style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; cursor: zoom-out;"
+    onclick="this.style.display='none'">
+    <img id="modal-img" src=""
+      style="max-width: 90%; max-height: 90%; object-fit: contain; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+  </div>
 </body>
+
 </html>

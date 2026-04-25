@@ -11,6 +11,7 @@ const imageInput = document.getElementById('image-input');
 const imagePreview = document.getElementById('image-preview');
 const previewImg = document.getElementById('preview-img');
 const removeImgBtn = document.getElementById('remove-img-btn');
+const subjectInput = document.getElementById('subject-input');
 
 let currentRole = 'doctor';
 let selectedImage = null;
@@ -84,9 +85,11 @@ if (removeImgBtn) {
 
 // Send Note (Doctor only)
 sendNoteBtn.addEventListener('click', () => {
+  const subject = subjectInput ? subjectInput.value.trim() : '';
   const text = noteInput.value.trim();
-  if (text !== '' || selectedImage) {
-    window.p2pAPI.addNote({ text: text, image: selectedImage });
+  if (text !== '' || subject !== '' || selectedImage) {
+    window.p2pAPI.addNote({ subject: subject, text: text, image: selectedImage });
+    if (subjectInput) subjectInput.value = '';
     noteInput.value = '';
     selectedImage = null;
     if (imageInput) imageInput.value = '';
@@ -100,15 +103,32 @@ window.p2pAPI.onStatus((msg) => {
 });
 
 window.p2pAPI.onRecord((record) => {
+  // Clear empty state on first record
+  const emptyState = recordsDiv.querySelector('.empty-state');
+  if (emptyState) {
+    emptyState.remove();
+  }
+
   const recordEl = document.createElement('div');
   recordEl.className = 'record-entry';
+  
   let imgHtml = '';
   if (record.image) {
-    imgHtml = `<img src="${record.image}" style="max-width: 100%; max-height: 200px; border-radius: 4px; margin-top: 8px;">`;
+    imgHtml = `<img src="${record.image}" style="max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 4px; margin-top: 12px; cursor: zoom-in; border: 1px solid var(--neutral-border-gray);" onclick="document.getElementById('modal-img').src=this.src; document.getElementById('image-modal').style.display='flex';">`;
   }
+  
+  const subjectText = record.subject ? record.subject : 'Medical Note';
+  const doctorName = record.doctor && !record.doctor.toLowerCase().startsWith('dr.') ? `Dr. ${record.doctor}` : (record.doctor || 'Unknown Doctor');
+  
   recordEl.innerHTML = `
-    <div class="timestamp">${record.timestamp}</div>
-    <div><strong>${record.doctor}:</strong> ${record.note}</div>
+    <div style="border-bottom: 1px solid var(--neutral-border-gray); padding-bottom: 8px; margin-bottom: 12px;">
+      <div style="font-size: 16px; font-weight: 700; color: var(--primary-dark-blue); margin-bottom: 4px;">Subject: ${subjectText}</div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: #666;">
+        <div><strong>From:</strong> <span style="color: var(--accent-teal); font-weight: 500;">${doctorName}</span></div>
+        <div class="timestamp">${record.timestamp}</div>
+      </div>
+    </div>
+    <div style="color: var(--primary-dark-blue); line-height: 1.5; white-space: pre-wrap; font-size: 14px;">${record.note}</div>
     ${imgHtml}
   `;
   recordsDiv.appendChild(recordEl);

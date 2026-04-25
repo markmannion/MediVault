@@ -93,6 +93,7 @@ ipcMain.on('add-note', async (event, noteData) => {
     const record = {
       timestamp: new Date().toLocaleTimeString(),
       doctor: doctorName,
+      subject: isString ? '' : (noteData.subject || ''),
       note: isString ? noteData : noteData.text,
       image: isString ? null : noteData.image
     }
