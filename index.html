@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MediVault</title>
+  <title>Medical Sync</title>
   <style>
     :root {
       /* Clinical Color Palette */
@@ -33,7 +33,7 @@
 
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, var(--neutral-light-gray) 0%, #fafafa 100%);
+      background: #cbf4d2;
       color: var(--primary-dark-blue);
       padding: 20px;
       line-height: 1.6;
@@ -48,20 +48,45 @@
     .header {
       margin-bottom: 30px;
       text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
     }
 
-    .header h1 {
-      font-size: 28px;
-      font-weight: 600;
-      color: var(--primary-dark-blue);
-      margin-bottom: 8px;
-      letter-spacing: -0.5px;
+    .header-logo {
+      width: 200px;
+      height: auto;
+      display: block;
     }
 
-    .header p {
+    .header-subtitle {
       font-size: 14px;
       color: #666;
       margin: 0;
+    }
+
+    /* ========== HEADER DIVIDER ========== */
+    .header-divider {
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-teal), var(--success-mint));
+      border-radius: 2px;
+      margin: 5px 0 0 0;
+    }
+
+    @media (max-width: 600px) {
+      .header {
+        gap: 10px;
+      }
+
+      .header-logo {
+        width: 150px;
+      }
+
+      .header-subtitle {
+        font-size: 13px;
+      }
     }
 
     /* ========== CARDS/PANELS ========== */
@@ -179,11 +204,11 @@
     /* ========== STATUS PANEL ========== */
     #status {
       padding: 15px;
-      background: var(--light-off-white);
+      background: var(--accent-teal);
       border-left: 3px solid var(--accent-teal);
       border-radius: var(--border-radius);
       font-size: 14px;
-      color: var(--primary-dark-blue);
+      color: var(--neutral-white);
       line-height: 1.5;
       margin: 10px 0;
     }
@@ -382,10 +407,16 @@
 </head>
 <body>
   <div class="container">
-    <!-- HEADER -->
+    <!-- HEADER WITH LOGO -->
     <div class="header">
-      <h1>MediVault</h1>
-      <p>Secure peer-to-peer medical record synchronization</p>
+      <img 
+        src="./mv_logo.png" 
+        alt="Medi Vault" 
+        class="header-logo"
+        title="Medi Vault - Secure Medical Records"
+      >
+      <p class="header-subtitle">Secure peer-to-peer medical record synchronization</p>
+      <div class="header-divider"></div>
     </div>
 
     <!-- ROLE SELECTION CARD -->
