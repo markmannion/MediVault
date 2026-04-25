@@ -241,6 +241,19 @@
       display: block;
     }
 
+    /* ========== DOCTOR NAME INPUT ========== */
+    #doctor-name-input {
+      display: block;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid var(--neutral-border-gray);
+      animation: slideIn 0.3s ease forwards;
+    }
+
+    #doctor-name-input.hidden {
+      display: none;
+    }
+
     @keyframes slideIn {
       from {
         opacity: 0;
@@ -431,6 +444,16 @@
         </select>
       </div>
 
+      <!-- DOCTOR NAME INPUT -->
+      <div id="doctor-name-input">
+        <label for="doctor-name">Doctor's Name</label>
+        <input
+          type="text"
+          id="doctor-name"
+          placeholder="Enter your full name"
+        >
+      </div>
+
       <!-- PATIENT KEY INPUT -->
       <div id="patient-key-input">
         <label for="connection-key">Doctor's Public Key</label>
@@ -491,6 +514,8 @@
   <script>
     // DOM References
     const roleSelect = document.getElementById('role-select');
+    const doctorNameInput = document.getElementById('doctor-name-input');
+    const doctorNameField = document.getElementById('doctor-name');
     const patientKeyInput = document.getElementById('patient-key-input');
     const connectBtn = document.getElementById('connect-btn');
     const statusDiv = document.getElementById('status');
@@ -513,16 +538,19 @@
       if (currentRole === 'patient') {
         patientKeyInput.classList.add('visible');
         patientKeyInput.style.display = 'block';
+        doctorNameInput.classList.add('hidden');
       } else {
         patientKeyInput.classList.remove('visible');
         patientKeyInput.style.display = 'none';
+        doctorNameInput.classList.remove('hidden');
       }
     });
 
     // Initialize P2P
     connectBtn.addEventListener('click', () => {
+      const doctorName = doctorNameField.value || 'Doctor';
       const keyString = document.getElementById('connection-key').value;
-      window.p2pAPI?.init?.({ role: currentRole, keyString });
+      window.p2pAPI?.init?.({ role: currentRole, keyString, doctorName });
 
       connectBtn.disabled = true;
       roleSelect.disabled = true;

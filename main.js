@@ -10,6 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 let mainWindow
 let core
 let swarm
+let doctorName = 'Doctor'
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -28,8 +29,13 @@ function createWindow() {
 app.whenReady().then(createWindow)
 
 // Handle initialization from the UI
-ipcMain.on('init-p2p', async (event, { role, keyString }) => {
+ipcMain.on('init-p2p', async (event, { role, keyString, doctorName: name }) => {
   const isDoctor = role === 'doctor'
+  
+  // Store doctor name
+  if (name) {
+    doctorName = name
+  }
   
   // Initialize Hypercore
   core = new Hypercore(
@@ -75,7 +81,7 @@ ipcMain.on('add-note', async (event, noteData) => {
     const isString = typeof noteData === 'string'
     const record = {
       timestamp: new Date().toLocaleTimeString(),
-      doctor: 'Dr. Smith',
+      doctor: doctorName,
       note: isString ? noteData : noteData.text,
       image: isString ? null : noteData.image
     }
