@@ -12,10 +12,12 @@ const imagePreview = document.getElementById('image-preview');
 const previewImg = document.getElementById('preview-img');
 const removeImgBtn = document.getElementById('remove-img-btn');
 const subjectInput = document.getElementById('subject-input');
+const addNotePatientIdInput = document.getElementById('add-note-patient-id');
 const downloadPdfBtn = document.getElementById('download-pdf-btn');
 
 let currentRole = 'doctor';
 let selectedImage = null;
+let currentPatientId = null;
 
 let allRecords = [];
 let currentFilter = 'all';
@@ -121,22 +123,33 @@ roleSelect.addEventListener('change', (e) => {
 // Initialize P2P
 connectBtn.addEventListener('click', () => {
   const doctorNameField = document.getElementById('doctor-name');
+  const patientIdField = document.getElementById('patient-id');
   const doctorName = doctorNameField ? doctorNameField.value.trim() : '';
+  const patientId = patientIdField ? patientIdField.value.trim() : '';
   const keyString = document.getElementById('connection-key').value;
   
   console.log('Renderer - Doctor Name:', doctorName);
+  console.log('Renderer - Patient ID:', patientId);
   console.log('Renderer - Current Role:', currentRole);
   
-  // Validate doctor name if role is doctor
-  if (currentRole === 'doctor' && !doctorName) {
-    alert('Please enter your name to initialize the connection');
-    return;
+  // Validate inputs based on role
+  if (currentRole === 'doctor') {
+    if (!doctorName) {
+      alert('Please enter your name to initialize the connection');
+      return;
+    }
+  } else {
+    if (!patientId) {
+      alert('Please enter your Patient ID to connect');
+      return;
+    }
   }
   
-  window.p2pAPI.init({ role: currentRole, keyString, doctorName });
+  currentPatientId = patientId;
+  window.p2pAPI.init({ role: currentRole, keyString, doctorName, patientId });
 
   connectBtn.disabled = true;
-  currentRole = 'doctor';
+  roleSelect.disabled = true;
   statusDiv.textContent = 'Initializing secure connection...';
 });
 
@@ -172,11 +185,21 @@ if (removeImgBtn) {
 
 // Send Note (Doctor only)
 sendNoteBtn.addEventListener('click', () => {
+  const subjectInput = document.getElementById('subject-input');
   const subject = subjectInput ? subjectInput.value.trim() : '';
   const text = noteInput.value.trim();
+  const patientIdField = document.getElementById('add-note-patient-id');
+  const patientIdForNote = patientIdField ? patientIdField.value.trim() : '';
+  
+  if (!patientIdForNote) {
+    alert('Please enter the patient ID for this note');
+    return;
+  }
+  
   if (text !== '' || subject !== '' || selectedImage) {
-    window.p2pAPI.addNote({ subject: subject, text: text, image: selectedImage });
+    window.p2pAPI.addNote({ patientId: patientIdForNote, subject: subject, text: text, image: selectedImage });
     if (subjectInput) subjectInput.value = '';
+    if (patientIdField) patientIdField.value = '';
     noteInput.value = '';
     selectedImage = null;
     if (imageInput) imageInput.value = '';
@@ -192,6 +215,8 @@ window.p2pAPI.onStatus((msg) => {
 window.p2pAPI.onRecord((record) => {
   allRecords.push(record);
   
+  // Only add doctor to sidebar if the record is visible to this user
+  // (For patients, only their own records should be received by the backend)
   if (record.doctor && !knownDoctors.has(record.doctor)) {
     knownDoctors.add(record.doctor);
     addDoctorToSidebar(record.doctor);

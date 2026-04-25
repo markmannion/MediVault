@@ -12,6 +12,7 @@ let mainWindow
 let core
 let swarm
 let doctorName = null
+let patientId = null
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -33,10 +34,10 @@ app.whenReady().then(createWindow)
 ipcMain.on('init-p2p', async (event, data) => {
   console.log('Backend - Received data:', JSON.stringify(data))
   
-  const { role, keyString, doctorName: name } = data
+  const { role, keyString, doctorName: name, patientId: id } = data
   const isDoctor = role === 'doctor'
   
-  console.log('Backend - Parsed values:', { role, name, isDoctor })
+  console.log('Backend - Parsed values:', { role, name, id, isDoctor })
   
   // For doctors, name is mandatory
   if (isDoctor) {
@@ -46,7 +47,17 @@ ipcMain.on('init-p2p', async (event, data) => {
       return
     }
     doctorName = name.trim()
+    patientId = null
     console.log('Backend - Doctor name set to:', doctorName)
+  } else {
+    // For patients, patient ID is mandatory
+    if (!id || !id.trim()) {
+      console.log('Backend - Patient ID validation failed. ID:', id, 'Type:', typeof id)
+      mainWindow.webContents.send('p2p-status', 'Error: Patient ID is required')
+      return
+    }
+    patientId = id.trim()
+    console.log('Backend - Patient ID set to:', patientId)
   }
   
   // Initialize Hypercore
@@ -64,17 +75,23 @@ ipcMain.on('init-p2p', async (event, data) => {
     mainWindow.webContents.send('p2p-key', doctorKey)
   } else {
     mainWindow.webContents.send('p2p-status', 'Connecting to DHT and searching for Doctor...')
-    // Read existing history
+    // Read existing history - only send records matching the patient ID
     for (let i = 0; i < core.length; i++) {
       const block = await core.get(i)
-      mainWindow.webContents.send('p2p-record', block)
+      // Only send records that match this patient's ID
+      if (block.patientId === patientId) {
+        mainWindow.webContents.send('p2p-record', block)
+      }
     }
   }
 
   // Listen for real-time updates
   core.on('append', async () => {
     const latestRecord = await core.get(core.length - 1)
-    mainWindow.webContents.send('p2p-record', latestRecord)
+    // Only send records that match the current user's filter
+    if (isDoctor || latestRecord.patientId === patientId) {
+      mainWindow.webContents.send('p2p-record', latestRecord)
+    }
   })
 
   // Initialize Hyperswarm
@@ -89,11 +106,12 @@ ipcMain.on('init-p2p', async (event, data) => {
 
 // Handle new notes from the Doctor's UI
 ipcMain.on('add-note', async (event, noteData) => {
-  if (core && doctorName) {
+  if (core && doctorName && noteData.patientId) {
     const isString = typeof noteData === 'string'
     const record = {
       timestamp: new Date().toLocaleTimeString(),
       doctor: doctorName,
+      patientId: noteData.patientId,
       subject: isString ? '' : (noteData.subject || ''),
       note: isString ? noteData : noteData.text,
       image: isString ? null : noteData.image
