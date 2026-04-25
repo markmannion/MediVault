@@ -1,125 +1,184 @@
-import { app, BrowserWindow, ipcMain, Menu, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import Hypercore from 'hypercore'
 import Hyperswarm from 'hyperswarm'
 import b4a from 'b4a'
 import fs from 'fs'
+import crypto from 'crypto'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 let mainWindow
 let core
 let swarm
-let doctorName = null
-let patientId = null
+let currentIdentity = null
+let patientSentUpTo = 0
+
+// AES-256-GCM Encryption Helpers
+const ALGORITHM = 'aes-256-gcm'
+
+function encryptPayload(dataObj, secretPin) {
+    const text = JSON.stringify(dataObj)
+    const key = crypto.scryptSync(secretPin, 'salt', 32)
+    const iv = crypto.randomBytes(16)
+    const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
+    let encrypted = cipher.update(text, 'utf8', 'hex')
+    encrypted += cipher.final('hex')
+    const authTag = cipher.getAuthTag().toString('hex')
+    return { iv: iv.toString('hex'), encrypted, authTag }
+}
+
+function decryptPayload(encObj, secretPin) {
+    try {
+        const key = crypto.scryptSync(secretPin, 'salt', 32)
+        const decipher = crypto.createDecipheriv(ALGORITHM, key, Buffer.from(encObj.iv, 'hex'))
+        decipher.setAuthTag(Buffer.from(encObj.authTag, 'hex'))
+        let decrypted = decipher.update(encObj.encrypted, 'hex', 'utf8')
+        decrypted += decipher.final('utf8')
+        return JSON.parse(decrypted)
+    } catch (err) {
+        return null // Decryption failed (wrong pin)
+    }
+}
 
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
+        width: 1000,
+        height: 700,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
             nodeIntegration: false
         }
     })
-    Menu.setApplicationMenu(null)
     mainWindow.loadFile('index.html')
 }
 
 app.whenReady().then(createWindow)
 
-// Sanitise a raw Hypercore block into a plain object safe for IPC structured clone
-function toPlainRecord(block) {
-    return {
-        timestamp: block.timestamp ?? '',
-        doctor: block.doctor ?? '',
-        patientId: block.patientId ?? '',
-        subject: block.subject ?? '',
-        note: block.note ?? '',
-        image: block.image ?? null
-    }
-}
+// --- AUTHENTICATION & IDENTITY ---
 
-// Handle initialization from the UI
+ipcMain.on('register-identity', async (event, { role, name }) => {
+    try {
+        // Create a temporary core just to let Hypercore generate a valid Ed25519 keypair safely
+        const tempPath = `./temp-data-${Date.now()}`
+        const tempCore = new Hypercore(tempPath)
+        await tempCore.ready()
+        
+        const keypair = {
+            role,
+            name: name.trim(),
+            publicKey: b4a.toString(tempCore.key, 'hex'),
+            secretKey: b4a.toString(tempCore.keyPair.secretKey, 'hex')
+        }
+        
+        await tempCore.close()
+        fs.rmSync(tempPath, { recursive: true, force: true }) // Clean up temp files
+
+        const savePath = await dialog.showSaveDialog({
+            title: `Save ${role} Identity`,
+            defaultPath: `medivault-${role}-${name.replace(/\s+/g, '')}.medivault`,
+            filters: [{ name: 'MediVault Identity', extensions: ['medivault'] }]
+        })
+
+        if (savePath.canceled) return
+
+        fs.writeFileSync(savePath.filePath, JSON.stringify(keypair, null, 2))
+        mainWindow.webContents.send('identity-established', keypair)
+    } catch (err) {
+        console.error('Registration failed:', err)
+        mainWindow.webContents.send('p2p-status', 'Error generating identity.')
+    }
+})
+
+ipcMain.on('login-identity', async () => {
+    try {
+        const openPath = await dialog.showOpenDialog({
+            title: 'Import MediVault Identity',
+            filters: [{ name: 'MediVault Identity', extensions: ['medivault'] }],
+            properties: ['openFile']
+        })
+
+        if (openPath.canceled || !openPath.filePaths.length) return
+
+        const keypair = JSON.parse(fs.readFileSync(openPath.filePaths[0], 'utf8'))
+        mainWindow.webContents.send('identity-established', keypair)
+    } catch (err) {
+        console.error('Login failed:', err)
+        mainWindow.webContents.send('p2p-status', 'Error: Invalid keypair file.')
+    }
+})
+
+// --- P2P NETWORK ---
+
 ipcMain.on('init-p2p', async (event, data) => {
-    console.log('Backend - Received data:', JSON.stringify(data))
+    const { identity, doctorPublicKey, patientPin } = data
+    currentIdentity = identity
+    const isDoctor = identity.role === 'doctor'
 
-    const { role, keyString, secretKey, doctorName: name, patientId: id } = data
-    const isDoctor = role === 'doctor'
-
-    console.log('Backend - Parsed values:', { role, name, id, isDoctor, hasSecretKey: !!secretKey })
-
-    if (isDoctor) {
-        if (!name || !name.trim()) {
-            mainWindow.webContents.send('p2p-status', 'Error: Doctor name is required')
-            return
-        }
-        doctorName = name.trim()
-        patientId = null
-    } else {
-        if (!id || !id.trim()) {
-            mainWindow.webContents.send('p2p-status', 'Error: Patient ID is required')
-            return
-        }
-        patientId = id.trim()
+    const hypercoreKeyPair = {
+        publicKey: b4a.from(identity.publicKey, 'hex'),
+        secretKey: b4a.from(identity.secretKey, 'hex')
     }
 
-    // When a doctor imports their keypair from another machine, both the public
-    // key and secret key are provided — Hypercore needs the full keypair to sign
-    // new blocks. Patients only ever provide the public key (keyString).
-    let hypercoreKey = null
-    let hypercoreKeyPair = null
-    if (isDoctor && keyString && secretKey) {
-        hypercoreKeyPair = {
-            publicKey: b4a.from(keyString, 'hex'),
-            secretKey: b4a.from(secretKey, 'hex')
-        }
-    } else if (keyString) {
-        hypercoreKey = b4a.from(keyString, 'hex')
-    }
-
-    core = new Hypercore(
-        isDoctor ? './doctor-data' : './patient-data',
-        hypercoreKeyPair ?? hypercoreKey,
-        { valueEncoding: 'json' }
-    )
-
-    await core.ready()
-
     if (isDoctor) {
-        const doctorKey = b4a.toString(core.key, 'hex')
-        mainWindow.webContents.send('p2p-status', `Doctor Core Created (${doctorName}). Share this key:\n${doctorKey}`)
-        mainWindow.webContents.send('p2p-key', doctorKey)
+        // Doctor hosts their own core
+        core = new Hypercore(`./data-doctor-${identity.publicKey.slice(0, 8)}`, hypercoreKeyPair, { valueEncoding: 'json' })
+        await core.ready()
 
+        mainWindow.webContents.send('p2p-status', 'Ledger active. Waiting for patients to connect...')
+
+        // Load historical records for the doctor (requires them to have the PINs, or we just show subjects)
         core.on('append', async () => {
             const block = await core.get(core.length - 1)
-            mainWindow.webContents.send('p2p-record', toPlainRecord(block))
+            // Doctor sees subjects natively. Payloads remain encrypted unless decrypted manually.
+            mainWindow.webContents.send('p2p-record', { 
+                timestamp: block.timestamp, 
+                doctor: block.doctor, 
+                patientId: block.patientId,
+                subject: block.subject, 
+                note: '[Encrypted Payload]', 
+                image: null 
+            })
         })
     } else {
-        mainWindow.webContents.send('p2p-status', 'Connecting to DHT and searching for Doctor...')
-
-        let sentUpTo = 0
-
-        const sendNewBlocks = async () => {
-            const length = core.length
-            for (let i = sentUpTo; i < length; i++) {
-                try {
-                    const block = await core.get(i)
-                    console.log(`Patient block ${i} patientId="${block.patientId}" expecting="${patientId}"`)
-                    if (block.patientId === patientId) {
-                        console.log(`Forwarding block ${i} to renderer`)
-                        mainWindow.webContents.send('p2p-record', toPlainRecord(block))
-                    }
-                } catch (err) {
-                    console.error(`Failed to read block ${i}:`, err)
-                }
-            }
-            sentUpTo = length
+        // Patient connects to the DOCTOR'S core to read
+        if (!doctorPublicKey || !patientPin) {
+            mainWindow.webContents.send('p2p-status', 'Error: Doctor Public Key and PIN required.')
+            return
         }
 
-        core.on('append', sendNewBlocks)
+        core = new Hypercore(`./data-patient-${identity.publicKey.slice(0, 8)}`, b4a.from(doctorPublicKey, 'hex'), { valueEncoding: 'json' })
+        await core.ready()
+
+        mainWindow.webContents.send('p2p-status', 'Connecting to Doctor\'s swarm...')
+
+        core.on('append', async () => {
+            const length = core.length
+            for (let i = patientSentUpTo; i < length; i++) {
+                const block = await core.get(i)
+                
+                // We still check ID so we don't waste CPU decrypting others' blocks,
+                // but if bypassed, the cryptography protects the data.
+                if (block.patientId === identity.publicKey) {
+                    const decryptedData = decryptPayload({ iv: block.iv, encrypted: block.encrypted, authTag: block.authTag }, patientPin)
+                    
+                    if (decryptedData) {
+                        mainWindow.webContents.send('p2p-record', { 
+                            timestamp: block.timestamp, 
+                            doctor: block.doctor, 
+                            subject: block.subject, 
+                            note: decryptedData.note, 
+                            image: decryptedData.image 
+                        })
+                    } else {
+                        console.error('Decryption failed for block', i)
+                    }
+                }
+            }
+            patientSentUpTo = length
+        })
     }
 
     swarm = new Hyperswarm()
@@ -127,102 +186,26 @@ ipcMain.on('init-p2p', async (event, data) => {
         mainWindow.webContents.send('p2p-status', '🟢 Secure P2P Connection Established!')
         core.replicate(conn)
     })
-
     swarm.join(core.discoveryKey)
 })
 
-// Handle new notes from the Doctor's UI
-ipcMain.on('add-note', async (event, noteData) => {
-    if (core && doctorName && noteData.patientId) {
-        const isString = typeof noteData === 'string'
-        const record = {
-            timestamp: new Date().toLocaleTimeString(),
-            doctor: doctorName,
-            patientId: noteData.patientId,
-            subject: isString ? '' : (noteData.subject || ''),
-            note: isString ? noteData : noteData.text,
-            image: isString ? null : noteData.image
-        }
-        await core.append(record)
+ipcMain.on('add-note', async (event, data) => {
+    if (!core || !currentIdentity) return
+
+    const { patientId, patientPin, subject, text, image } = data
+    
+    // Encrypt the sensitive payload
+    const encData = encryptPayload({ note: text, image: image }, patientPin)
+
+    const record = {
+        timestamp: new Date().toLocaleTimeString(),
+        doctor: currentIdentity.name,
+        patientId: patientId.trim(),
+        subject: subject || 'Medical Note', // Subject left plaintext for ledger visibility
+        iv: encData.iv,
+        encrypted: encData.encrypted,
+        authTag: encData.authTag
     }
-})
 
-// Export keypair: saves the core's public key + secret key to a .medivault file
-ipcMain.on('export-keypair', async () => {
-    if (!core) return
-
-    try {
-        const savePath = await dialog.showSaveDialog({
-            title: 'Export Doctor Keypair',
-            defaultPath: `medivault-keypair-${doctorName || 'doctor'}.medivault`,
-            filters: [{ name: 'MediVault Keypair', extensions: ['medivault'] }]
-        })
-
-        if (savePath.canceled) return
-
-        const keypair = {
-            publicKey: b4a.toString(core.key, 'hex'),
-            secretKey: b4a.toString(core.keyPair.secretKey, 'hex'),
-            doctorName: doctorName
-        }
-
-        fs.writeFileSync(savePath.filePath, JSON.stringify(keypair, null, 2))
-        mainWindow.webContents.send('p2p-status', `Keypair exported to ${path.basename(savePath.filePath)}. Keep this file safe — it is your identity.`)
-    } catch (err) {
-        console.error('Export failed:', err)
-        mainWindow.webContents.send('p2p-status', 'Error: Failed to export keypair.')
-    }
-})
-
-// Import keypair: reads a .medivault file and sends the keys back to the renderer
-// so it can pre-fill the connection form and initialise with the existing identity
-ipcMain.on('import-keypair', async () => {
-    try {
-        const openPath = await dialog.showOpenDialog({
-            title: 'Import Doctor Keypair',
-            filters: [{ name: 'MediVault Keypair', extensions: ['medivault'] }],
-            properties: ['openFile']
-        })
-
-        if (openPath.canceled || !openPath.filePaths.length) return
-
-        const raw = fs.readFileSync(openPath.filePaths[0], 'utf8')
-        const keypair = JSON.parse(raw)
-
-        if (!keypair.publicKey || !keypair.secretKey) {
-            mainWindow.webContents.send('p2p-status', 'Error: Invalid keypair file.')
-            return
-        }
-
-        mainWindow.webContents.send('keypair-imported', {
-            publicKey: keypair.publicKey,
-            secretKey: keypair.secretKey,
-            doctorName: keypair.doctorName || ''
-        })
-    } catch (err) {
-        console.error('Import failed:', err)
-        mainWindow.webContents.send('p2p-status', 'Error: Could not read keypair file.')
-    }
-})
-
-// Handle PDF download
-ipcMain.on('download-pdf', async () => {
-    try {
-        const pdfPath = await dialog.showSaveDialog({
-            title: 'Save Medical Records Ledger',
-            defaultPath: 'Medical_Records_Ledger.pdf',
-            filters: [{ name: 'PDFs', extensions: ['pdf'] }]
-        })
-
-        if (pdfPath.canceled) return
-
-        const data = await mainWindow.webContents.printToPDF({
-            printBackground: true,
-            margins: { marginType: 'printableArea' }
-        })
-
-        fs.writeFileSync(pdfPath.filePath, data)
-    } catch (error) {
-        console.error('Failed to generate PDF:', error)
-    }
+    await core.append(record)
 })
