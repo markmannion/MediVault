@@ -70,12 +70,14 @@ ipcMain.on('init-p2p', async (event, { role, keyString }) => {
 })
 
 // Handle new notes from the Doctor's UI
-ipcMain.on('add-note', async (event, noteText) => {
+ipcMain.on('add-note', async (event, noteData) => {
   if (core) {
+    const isString = typeof noteData === 'string'
     const record = {
       timestamp: new Date().toLocaleTimeString(),
       doctor: 'Dr. Smith',
-      note: noteText
+      note: isString ? noteData : noteData.text,
+      image: isString ? null : noteData.image
     }
     await core.append(record)
   }

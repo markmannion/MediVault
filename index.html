@@ -465,11 +465,23 @@
     <div class="card" id="doctor-controls">
       <h3>Add Medical Note</h3>
       <label for="note-input" style="font-size: 13px; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Medical Note</label>
-      <textarea
-        id="note-input"
-        placeholder="Enter medical note (e.g., patient observations, prescriptions)..."
-        style="width: 100%; padding: 12px 14px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 14px; resize: vertical; min-height: 80px; color: #22577A;"
-      ></textarea>
+      <div style="position: relative;">
+        <textarea
+          id="note-input"
+          placeholder="Enter medical note (e.g., patient observations, prescriptions)..."
+          style="width: 100%; padding: 12px 14px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 14px; resize: vertical; min-height: 80px; color: #22577A; padding-right: 40px;"
+        ></textarea>
+        <button id="attach-btn" title="Attach Image" style="position: absolute; right: 10px; bottom: 20px; width: auto; padding: 5px; margin: 0; background: none; border: none; cursor: pointer; color: #38A3A5; box-shadow: none;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+          </svg>
+        </button>
+      </div>
+      <input type="file" id="image-input" accept="image/*" style="display: none;">
+      <div id="image-preview" style="display: none; margin-bottom: 10px; align-items: center; gap: 10px;">
+        <img id="preview-img" src="" style="max-width: 100px; max-height: 100px; border-radius: 4px; border: 1px solid #ccc;">
+        <button id="remove-img-btn" style="width: auto; padding: 6px 12px; margin: 0; background: #e74c3c; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Remove</button>
+      </div>
       <button id="send-note-btn">Add to Ledger</button>
     </div>
   </div>
@@ -486,8 +498,14 @@
     const doctorControls = document.getElementById('doctor-controls');
     const noteInput = document.getElementById('note-input');
     const sendNoteBtn = document.getElementById('send-note-btn');
+    const attachBtn = document.getElementById('attach-btn');
+    const imageInput = document.getElementById('image-input');
+    const imagePreview = document.getElementById('image-preview');
+    const previewImg = document.getElementById('preview-img');
+    const removeImgBtn = document.getElementById('remove-img-btn');
 
     let currentRole = 'doctor';
+    let selectedImage = null;
 
     // Toggle UI based on role
     roleSelect.addEventListener('change', (e) => {
@@ -511,11 +529,45 @@
       statusDiv.textContent = 'Initializing secure connection...';
     });
 
+    // Image Selection
+    if (attachBtn) {
+      attachBtn.addEventListener('click', () => {
+        imageInput.click();
+      });
+    }
+
+    if (imageInput) {
+      imageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            selectedImage = e.target.result;
+            previewImg.src = selectedImage;
+            imagePreview.style.display = 'flex';
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    if (removeImgBtn) {
+      removeImgBtn.addEventListener('click', () => {
+        selectedImage = null;
+        imageInput.value = '';
+        imagePreview.style.display = 'none';
+      });
+    }
+
     // Send Note (Doctor only)
     sendNoteBtn.addEventListener('click', () => {
-      if (noteInput.value.trim() !== '') {
-        window.p2pAPI?.addNote?.(noteInput.value);
+      const text = noteInput.value.trim();
+      if (text !== '' || selectedImage) {
+        window.p2pAPI?.addNote?.({ text: text, image: selectedImage });
         noteInput.value = '';
+        selectedImage = null;
+        if (imageInput) imageInput.value = '';
+        if (imagePreview) imagePreview.style.display = 'none';
       }
     });
 
@@ -559,9 +611,14 @@
 
         const recordEl = document.createElement('div');
         recordEl.className = 'record-entry';
+        let imgHtml = '';
+        if (record.image) {
+          imgHtml = `<img src="${record.image}" style="max-width: 100%; max-height: 200px; border-radius: 4px; margin-top: 8px;">`;
+        }
         recordEl.innerHTML = `
           <div class="timestamp">${record.timestamp}</div>
           <div><strong>${record.doctor}:</strong> ${record.note}</div>
+          ${imgHtml}
         `;
         recordsDiv.appendChild(recordEl);
         recordsDiv.scrollTop = recordsDiv.scrollHeight;
